@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
           Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          chatConversation.length != 0
+          chatConversation.length! != 0
               ? Expanded(
                   child: ListView.builder(
                       itemCount: chatConversation.length,
@@ -55,7 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         );
                       }),
                 )
-              : Text('Hello'),
+              : const Text('Hello'),
           //     Row(
           //           children: [
           //             Expanded(

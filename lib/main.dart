@@ -1,6 +1,7 @@
 import 'package:chat_bot/screens/home_screen.dart';
 import 'package:chat_bot/widgets/chat_response.dart';
 import 'package:chat_bot/widgets/speech_to_text.dart';
+import 'package:chat_bot/widgets/text_to_speech.dart';
 import 'package:flutter/material.dart';
 
 void main() {

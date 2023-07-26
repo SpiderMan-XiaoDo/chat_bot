@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:dart_openai/dart_openai.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.openAIKey});
@@ -14,11 +15,15 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _speechToText = SpeechToText();
-  final _chatController = TextEditingController();
+  final _flutterTts = FlutterTts();
+
   // bool _speechEnabled = false;
   String _lastWords = '';
   final List<Map<String, String>> chatConversation = [];
   final _formKey = GlobalKey<FormState>();
+  final _chatController = TextEditingController();
+  final _scrollController = ScrollController();
+
   var _enteredQuestion = '';
   var isText = false;
   var isListen = false;
@@ -30,6 +35,21 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     OpenAI.apiKey = widget.openAIKey;
     _initSpeech();
+  }
+
+  void textToSpeech(String content, String language) async {
+    try {
+      // List<dynamic> languages = await _flutterTts.getLanguages;
+      // print("Danh sách ngôn ngữ hỗ trợ:");
+      // languages.forEach((language) {
+      //   print(language);
+      // });
+      await _flutterTts.setLanguage(language);
+      await _flutterTts.setPitch(1.0);
+      await _flutterTts.speak(content);
+    } catch (error) {
+      print(error.toString());
+    }
   }
 
   @override
@@ -72,14 +92,20 @@ class _ChatScreenState extends State<ChatScreen> {
       _formKey.currentState!.save();
       setState(() {
         chatConversation.add({'user': _enteredQuestion});
-        // print('Length chatConversation: ');
-        // print(chatConversation.length);
         _formKey.currentState!.reset();
         _chatController.clear();
         isText = false;
         isLoading = true;
         // print(_enteredQuestion);
       });
+      try {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {}
+      ;
     }
   }
 
@@ -90,7 +116,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .create(
         model: 'text-davinci-003',
         prompt: _enteredQuestion,
-        maxTokens: 500,
+        maxTokens: 1500,
         temperature: 1,
       )
           .then((value) {
@@ -100,6 +126,13 @@ class _ChatScreenState extends State<ChatScreen> {
           isLoading = false;
         });
         return value;
+      }).then((value) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+        return null;
       }).catchError((error) {
         print('EROOR: ________');
         print(error.toString());
@@ -126,6 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
           chatConversation.isNotEmpty
               ? Expanded(
                   child: ListView.builder(
+                      controller: _scrollController,
                       itemCount: chatConversation.length,
                       itemBuilder: (ctx, index) {
                         final item = chatConversation[index];
@@ -133,22 +167,73 @@ class _ChatScreenState extends State<ChatScreen> {
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            role == 'user'
-                                ? const Expanded(child: Icon(Icons.person))
+                            role != 'user'
+                                ? const Expanded(
+                                    child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Icon(
+                                          Icons.android_sharp,
+                                        )),
+                                  )
                                 : Expanded(
                                     flex: 7,
-                                    child: Container(
-                                      padding: EdgeInsets.only(left: 80),
-                                      child: Text(
-                                        item.values.first,
-                                        textAlign: TextAlign.justify,
-                                      ),
-                                    )),
-                            role == 'user'
+                                    child: Align(
+                                        alignment: Alignment.topRight,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                              // border: Border.all()
+                                              color: Colors.blue,
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                          margin: const EdgeInsets.only(
+                                              left: 100, top: 10),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              10, 12, 8, 12),
+                                          child: Text(
+                                            item.values.first,
+                                            textAlign: TextAlign.start,
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        )),
+                                  ),
+                            role != 'user'
                                 ? Expanded(
-                                    flex: 7, child: Text(item.values.first))
+                                    flex: 7,
+                                    child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                              // border: Border.all()
+                                              color: const Color.fromARGB(
+                                                  255, 73, 72, 72),
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                          margin: const EdgeInsets.only(
+                                              right: 100, top: 10),
+                                          padding: const EdgeInsets.fromLTRB(
+                                              10, 12, 8, 12),
+                                          child: Column(children: [
+                                            Text(
+                                              item.values.first,
+                                              textAlign: TextAlign.start,
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ),
+                                            IconButton(
+                                                key: ValueKey(index),
+                                                onPressed: () {
+                                                  textToSpeech(
+                                                      item.values.first,
+                                                      'vi-VN');
+                                                },
+                                                icon: Icon(Icons.speaker)),
+                                          ]),
+                                        )))
                                 : const Expanded(
-                                    child: Icon(Icons.android_rounded))
+                                    child: Align(
+                                        alignment: Alignment.topRight,
+                                        child: Icon(Icons.person_2_rounded))),
                           ],
                         );
                       }),
@@ -162,7 +247,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _chatController,
-                    maxLength: 50,
+                    maxLength: 500,
                     decoration: const InputDecoration(
                       label: Text('Enter a message'),
                     ),
@@ -177,7 +262,25 @@ class _ChatScreenState extends State<ChatScreen> {
                     onSaved: (value) {
                       _enteredQuestion = value!;
                     },
+                    onTap: () {
+                      try {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      } catch (e) {}
+                      ;
+                    },
                     onChanged: (value) {
+                      try {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        );
+                      } catch (e) {}
+                      ;
                       if (value != '') {
                         setState(() {
                           isText = true;
@@ -191,7 +294,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 const SizedBox(
-                  width: 5,
+                  width: 10,
                 ),
                 isLoading
                     ? const CircularProgressIndicator()

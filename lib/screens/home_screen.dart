@@ -20,11 +20,28 @@ class _HomeScreenState extends State<HomeScreen> {
   var _initOpenAIKey = '';
   var _initIDKey = '';
   var _isNewKey = false;
-  // @override
+  @override
   void initState() {
     _isLoading = false;
     _getOldOpenAIKey();
     super.initState();
+  }
+
+  Future<int> isCorrectKey(String value) async {
+    final url = Uri.https('api.openai.com', 'v1/models');
+    // try {
+    //   final response = await http.get(url, headers: {
+    //     'Authorization':
+    //         ' Bearer $_enteredOpenAiKey'
+    //   });
+    // } catch (e) {
+    //   // print(e.toString());
+    // }
+    return await http
+        .get(url, headers: {'Authorization': ' Bearer $value'}).then((result) {
+      print('StatusCode: ______________________ ${result.statusCode}');
+      return result.statusCode;
+    }).catchError((error) => 0);
   }
 
   void _selectedPage(int index) {
@@ -131,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           TextFormField(
-            maxLength: 50,
+            maxLength: 51,
             decoration: const InputDecoration(
               contentPadding:
                   EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -143,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
               if (value == null ||
                   value.isEmpty ||
                   value.trim().length <= 1 ||
-                  value.trim().length > 50) {
+                  value.trim().length > 51 ||
+                  // ignore: unrelated_type_equality_checks
+                  isCorrectKey(value).then((result) => result) == 200) {
                 return 'Wrong key';
               }
               return null;
@@ -157,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               ElevatedButton(
                   onPressed: () {
+                    print('IsCorrectKey:___________');
                     _addOpenAIKey();
                     if (_formKey.currentState!.validate()) {
                       _newChatScreen(context);

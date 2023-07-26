@@ -35,9 +35,7 @@ class _SpeechToText extends State<SpeechToTextScreen> {
 
   void _startListening() async {
     try {
-      await _speechToText.listen(onResult: _onSpeechResult).then((value) {
-        print('onResult: ${value}');
-      });
+      await _speechToText.listen(onResult: _onSpeechResult).then((value) {});
       setState(() {});
     } catch (e) {
       print(e.toString());
@@ -52,7 +50,7 @@ class _SpeechToText extends State<SpeechToTextScreen> {
   void _onSpeechResult(SpeechRecognitionResult result) {
     setState(() {
       _lastWords = result.recognizedWords;
-      print('_lastWords: ${_lastWords}');
+      // print('_lastWords: ${_lastWords}');
     });
   }
 
@@ -76,17 +74,10 @@ class _SpeechToText extends State<SpeechToTextScreen> {
               child: Container(
                 padding: EdgeInsets.all(16),
                 child: Text(
-                  // If listening is active show the recognized words
-                  _speechToText.isListening
-                      ? '$_lastWords'
-                      // If listening isn't active but could be tell the user
-                      // how to start it, otherwise indicate that speech
-                      // recognition is not yet ready or not supported on
-                      // the target device
-                      : _speechEnabled
-                          ? 'Tap the microphone to start listening...'
-                          : 'Speech not available',
-                ),
+                    // If listening is active show the recognized words
+                    _lastWords != null && _lastWords != ''
+                        ? '${_lastWords}'
+                        : ''),
               ),
             ),
           ],

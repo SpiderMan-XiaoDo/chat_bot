@@ -112,16 +112,18 @@ class _ChatScreenState extends State<ChatScreen> {
   void getResponseChatClone() async {
     // OpenAI.apiKey = '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';
     try {
-      await OpenAI.instance.completion
-          .create(
-        model: 'text-davinci-003',
-        prompt: _enteredQuestion,
-        maxTokens: 1500,
-        temperature: 1,
-      )
-          .then((value) {
+      OpenAIChatCompletionModel chatCompletion =
+          await OpenAI.instance.chat.create(
+        model: "gpt-3.5-turbo",
+        messages: [
+          OpenAIChatCompletionChoiceMessageModel(
+            content: _enteredQuestion,
+            role: OpenAIChatMessageRole.user,
+          ),
+        ],
+      ).then((value) {
         setState(() {
-          _responsedAnswer = value.choices[0].text;
+          _responsedAnswer = value.choices.first.message.content.toString();
           chatConversation.add({'asistant': _responsedAnswer.trim()});
           isLoading = false;
         });
@@ -132,12 +134,8 @@ class _ChatScreenState extends State<ChatScreen> {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
-        return null;
-      }).catchError((error) {
-        print('EROOR: ________');
-        print(error.toString());
+        return value;
       });
-      // return completion.choices[0].text;
     } catch (e) {
       print(e.toString());
     }

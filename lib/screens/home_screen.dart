@@ -122,6 +122,15 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (ctx) => ChatScreen(openAIKey: _enteredOpenAiKey)));
   }
 
+  String _keyToken() {
+    var usedKey = _initOpenAIKey != '' ? _initOpenAIKey : _enteredOpenAiKey;
+
+    var key = usedKey.substring(0, 3) +
+        '***********' +
+        usedKey.substring(usedKey.length - 4, usedKey.length);
+    return key;
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget isReturn = Form(
@@ -216,16 +225,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     image: Image.asset('assets/image/brycen.jpg').image),
               ),
             ),
-            const Text(
-              'Key using',
-              style: TextStyle(
-                fontSize: 30,
-                color: Colors.black,
-                fontWeight: FontWeight.w500,
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.pink[50],
+              ),
+              child: const Text(
+                'Key using',
+                style: TextStyle(
+                  fontSize: 30,
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
             Text(
-              _initOpenAIKey != '' ? _initOpenAIKey : _enteredOpenAiKey,
+              _initOpenAIKey = _keyToken(),
               style: const TextStyle(fontSize: 24),
             ),
             Row(

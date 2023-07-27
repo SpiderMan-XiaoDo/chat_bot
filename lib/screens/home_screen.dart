@@ -226,9 +226,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Container(
+              padding: EdgeInsets.fromLTRB(40, 15, 40, 15),
+              margin: EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: Colors.pink[50],
-              ),
+                  color: Color.fromARGB(255, 49, 207, 178),
+                  borderRadius: BorderRadius.circular(20)),
               child: const Text(
                 'Key using',
                 style: TextStyle(
@@ -238,9 +240,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            Text(
-              _initOpenAIKey = _keyToken(),
-              style: const TextStyle(fontSize: 24),
+            Container(
+              padding: EdgeInsets.fromLTRB(30, 10, 30, 10),
+              decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 113, 111, 111),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text(
+                _initOpenAIKey = _keyToken(),
+                style: const TextStyle(
+                    fontSize: 24, color: Color.fromARGB(255, 101, 246, 214)),
+              ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -342,8 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           items: const [
             BottomNavigationBarItem(
-                icon: Icon(Icons.summarize_rounded),
-                label: 'Summarize conversation'),
+                icon: Icon(Icons.house_outlined), label: 'Home Page'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline), label: 'Try Chat'),
           ]),

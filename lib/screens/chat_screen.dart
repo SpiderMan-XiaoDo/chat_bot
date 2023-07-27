@@ -184,7 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(20)),
                                           margin: const EdgeInsets.only(
-                                              left: 100, top: 10),
+                                              left: 100, bottom: 10),
                                           padding: const EdgeInsets.fromLTRB(
                                               10, 12, 8, 12),
                                           child: Text(
@@ -208,7 +208,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(20)),
                                           margin: const EdgeInsets.only(
-                                              right: 100, top: 10),
+                                              right: 100, bottom: 10),
                                           padding: const EdgeInsets.fromLTRB(
                                               10, 12, 8, 12),
                                           child: Column(children: [

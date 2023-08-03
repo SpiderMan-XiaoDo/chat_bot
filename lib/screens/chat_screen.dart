@@ -171,7 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final conversation = ConversationChain(llm: llm, memory: bufferMemory);
       var prompt =
           'Với đoạn hội thoại: ${temp.summarize()} và hiểu biết của bạn, hãy trả lời câu hỏi: $_enteredQuestion bằng loại ngôn ngữ mà câu hỏi đó đã sử dụng.';
-      await conversation.run(_enteredQuestion).then((value) {
+      await conversation.run(prompt).then((value) {
         setState(() {
           _responsedAnswer = value;
           chatConversation.add({'asistant': _responsedAnswer.trim()});

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "225886549644",
+    "firebase_url": "https://chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "chat-bot-api-ffdeb",
+    "storage_bucket": "chat-bot-api-ffdeb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:225886549644:android:110182e2bbb847e3ff6da9",
+        "android_client_info": {
+          "package_name": "com.example.chat_bot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "225886549644-b44836idu9cvjhk5722396puir27ff71.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZrJKDiTwInetcXcjviFJSFLLIlQZNfbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "225886549644-b44836idu9cvjhk5722396puir27ff71.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "225886549644-btg0nsggl8b1etk48r2fc3ffveij47p2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.chatBot.RunnerTests"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

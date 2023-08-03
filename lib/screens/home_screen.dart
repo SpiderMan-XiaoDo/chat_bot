@@ -229,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.fromLTRB(40, 15, 40, 15),
               margin: EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                  color: Color.fromARGB(255, 49, 207, 178),
+                  color: Color.fromARGB(255, 227, 239, 237),
                   borderRadius: BorderRadius.circular(20)),
               child: const Text(
                 'Key using',
@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color.fromARGB(255, 113, 111, 111),
                   borderRadius: BorderRadius.circular(20)),
               child: Text(
-                _initOpenAIKey = _keyToken(),
+                _keyToken(),
                 style: const TextStyle(
                     fontSize: 24, color: Color.fromARGB(255, 101, 246, 214)),
               ),

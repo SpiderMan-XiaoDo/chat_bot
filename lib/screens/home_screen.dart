@@ -79,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _initIDKey = itemData.key;
           _initOpenAIKey = itemData.value['OpenAIkey'];
+          print('_InitIDKey: _________ $_initOpenAIKey');
         });
       }
       // _openAiKeyController.text = _initOpenAIKey;

@@ -1,6 +1,6 @@
 import 'package:chat_bot/screens/home_screen.dart';
 import 'package:chat_bot/screens/summariz_screen.dart';
-import 'package:flutter/foundation.dart';
+import 'package:chat_bot/test_function/summarize_data.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -29,6 +29,6 @@ class MyApp extends StatelessWidget {
           ),
           scaffoldBackgroundColor: const Color.fromARGB(255, 50, 58, 60),
         ),
-        home: HomeScreen());
+        home: SummarizeScreen(openAiKey: ''));
   }
 }

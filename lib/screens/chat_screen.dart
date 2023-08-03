@@ -1,8 +1,10 @@
 import 'package:chat_bot/test_function/summarize_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/material.dart';
-import 'package:langchain/langchain.dart';
-import 'package:langchain_openai/langchain_openai.dart';
+// import 'package:langchain_openai/langchain_openai.dart';
+// import 'package:langchain/langchain.dart';
+// import 'package:langchain_openai/langchain_openai.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 // import 'package:dart_openai/dart_openai.dart';
@@ -39,7 +41,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     try {
       super.initState();
-      // OpenAI.apiKey = widget.openAIKey;
+      OpenAI.apiKey = widget.openAIKey;
       _initSpeech();
     } catch (e) {
       print(e.toString());
@@ -65,9 +67,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     if (chatConversation.isNotEmpty) {
       try {
-        var temp = SummarizeData(
-            conversation: chatConversation, apiKey: widget.openAIKey);
-
         _chatController.dispose();
         FirebaseFirestore.instance.collection('chat').add({
           'conversation': chatConversation,
@@ -115,7 +114,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       setState(() {
-        chatConversation.add({'user': _enteredQuestion});
+        chatConversation.add({'Human': _enteredQuestion});
         _formKey.currentState!.reset();
         _chatController.clear();
         isText = false;
@@ -134,59 +133,74 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void getResponseChatClone() async {
-    // try {
-    //   OpenAIChatCompletionModel chatCompletion =
-    //       await OpenAI.instance.chat.create(
-    //     model: "gpt-3.5-turbo",
-    //     messages: [
-    //       OpenAIChatCompletionChoiceMessageModel(
-    //         content: _enteredQuestion,
-    //         role: OpenAIChatMessageRole.user,
-    //       ),
-    //     ],
-    //   ).then((value) {
-    //     setState(() {
-    //       _responsedAnswer = value.choices.first.message.content.toString();
-    //       chatConversation.add({'asistant': _responsedAnswer.trim()});
-    //       isLoading = false;
-    //     });
-    //     return value;
-    //   }).then((value) {
-    //     _scrollController.animateTo(
-    //       _scrollController.position.maxScrollExtent,
-    //       duration: const Duration(milliseconds: 300),
-    //       curve: Curves.easeOut,
-    //     );
-    //     return value;
-    //   });
-    // } catch (e) {
-    //   print(e.toString());
-    // }
-
     try {
-      var llm = OpenAI(apiKey: widget.openAIKey, temperature: 1.0);
-      var temp = SummarizeData(
-          conversation: chatConversation, apiKey: widget.openAIKey);
-      var bufferMemory = temp.bufferMemory();
-      final conversation = ConversationChain(llm: llm, memory: bufferMemory);
-      var prompt =
-          'Với đoạn hội thoại: ${temp.summarize()} và hiểu biết của bạn, hãy trả lời câu hỏi: $_enteredQuestion bằng loại ngôn ngữ mà câu hỏi đó đã sử dụng.';
-      await conversation.run(prompt).then((value) {
+      String history = '';
+      chatConversation.forEach((element) {
+        history = history +
+            element.keys.first.toString() +
+            ': ' +
+            element.values.first +
+            '\n';
+      });
+      print('history: _________ $history');
+      OpenAI.instance.chat.create(
+        model: "gpt-3.5-turbo",
+        messages: [
+          OpenAIChatCompletionChoiceMessageModel(
+            content: '$history\nAi:',
+            role: OpenAIChatMessageRole.user,
+          ),
+        ],
+      ).then((value) {
         setState(() {
-          _responsedAnswer = value;
-          chatConversation.add({'asistant': _responsedAnswer.trim()});
+          _responsedAnswer = value.choices.first.message.content.toString();
+          chatConversation.add({'Ai': _responsedAnswer.trim()});
           isLoading = false;
         });
+        return value;
+      }).then((value) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+        return value;
       });
     } catch (e) {
       print(e.toString());
+      isLoading = false;
     }
-  }
 
-  void summarizeData() {
-    var temp =
-        SummarizeData(conversation: chatConversation, apiKey: widget.openAIKey);
-    temp.summarize();
+    // try {
+    //   var llm = ChatOpenAI(
+    //       apiKey: widget.openAIKey,
+    //       model: 'gpt-3.5-turbo-0613',
+    //       temperature: 1.0);
+    //       var memory = ConversationBufferMemory();
+    // chatConversation.forEach((element) {
+    //   if (element.keys.first == 'Human') {
+    //     memory.chatHistory.addUserChatMessage(element.values.first);
+    //   } else {
+    //     memory.chatHistory.addAIChatMessage(element.values.first);
+    //   }
+    // });
+    // var memory_buffer = '';
+    // await memory.loadMemoryVariables().then((value) {
+    //   memory_buffer = value.values.first.toString();
+
+    // });
+    // var temp = SummarizeData(
+    //     conversation: chatConversation, apiKey: widget.openAIKey);
+    // var bufferMemory = temp.bufferMemory();
+    // final conversation = ConversationChain(llm: llm, memory: bufferMemory);
+    // var prompt =
+    // await conversation.run(prompt).then((value) {
+    //   setState(() {
+    //     _responsedAnswer = value;
+    //     chatConversation.add({'asistant': _responsedAnswer.trim()});
+    //     isLoading = false;
+    //   });
+    // });
   }
 
   @override
@@ -210,7 +224,7 @@ class _ChatScreenState extends State<ChatScreen> {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              role != 'user'
+              role != 'Human'
                   ? const Expanded(
                       child: Align(
                           alignment: Alignment.topLeft,
@@ -237,7 +251,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           )),
                     ),
-              role != 'user'
+              role != 'Human'
                   ? Expanded(
                       flex: 7,
                       child: Align(
@@ -275,12 +289,7 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text('Chat Coversation'),
         actions: [
-          IconButton(
-              onPressed: () {
-                print(':_________________________');
-                summarizeData();
-              },
-              icon: Icon(Icons.summarize)),
+          IconButton(onPressed: () {}, icon: Icon(Icons.summarize)),
         ],
       ),
       // drawer: const MainDrawer(),

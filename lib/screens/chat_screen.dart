@@ -1,7 +1,11 @@
+import 'package:chat_bot/test_function/summarize_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:langchain/langchain.dart';
+import 'package:langchain_openai/langchain_openai.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:dart_openai/dart_openai.dart';
+// import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -30,11 +34,16 @@ class _ChatScreenState extends State<ChatScreen> {
   var isLoading = false;
   var initValueTextField = '';
   var _responsedAnswer = '';
+  final _focusNode = FocusNode();
   @override
   void initState() {
-    super.initState();
-    OpenAI.apiKey = widget.openAIKey;
-    _initSpeech();
+    try {
+      super.initState();
+      // OpenAI.apiKey = widget.openAIKey;
+      _initSpeech();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 
   void textToSpeech(String content, String language) async {
@@ -54,7 +63,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    _chatController.dispose();
+    if (chatConversation.isNotEmpty) {
+      try {
+        var temp = SummarizeData(
+            conversation: chatConversation, apiKey: widget.openAIKey);
+
+        _chatController.dispose();
+        FirebaseFirestore.instance.collection('chat').add({
+          'conversation': chatConversation,
+          "createdAt": Timestamp.now(),
+          'deletedAt': null,
+          'summarize': null,
+          'title': null,
+        });
+      } catch (e) {}
+    }
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -110,43 +134,156 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void getResponseChatClone() async {
-    // OpenAI.apiKey = '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';
+    // try {
+    //   OpenAIChatCompletionModel chatCompletion =
+    //       await OpenAI.instance.chat.create(
+    //     model: "gpt-3.5-turbo",
+    //     messages: [
+    //       OpenAIChatCompletionChoiceMessageModel(
+    //         content: _enteredQuestion,
+    //         role: OpenAIChatMessageRole.user,
+    //       ),
+    //     ],
+    //   ).then((value) {
+    //     setState(() {
+    //       _responsedAnswer = value.choices.first.message.content.toString();
+    //       chatConversation.add({'asistant': _responsedAnswer.trim()});
+    //       isLoading = false;
+    //     });
+    //     return value;
+    //   }).then((value) {
+    //     _scrollController.animateTo(
+    //       _scrollController.position.maxScrollExtent,
+    //       duration: const Duration(milliseconds: 300),
+    //       curve: Curves.easeOut,
+    //     );
+    //     return value;
+    //   });
+    // } catch (e) {
+    //   print(e.toString());
+    // }
+
     try {
-      OpenAIChatCompletionModel chatCompletion =
-          await OpenAI.instance.chat.create(
-        model: "gpt-3.5-turbo",
-        messages: [
-          OpenAIChatCompletionChoiceMessageModel(
-            content: _enteredQuestion,
-            role: OpenAIChatMessageRole.user,
-          ),
-        ],
-      ).then((value) {
+      var llm = OpenAI(apiKey: widget.openAIKey, temperature: 1.0);
+      var temp = SummarizeData(
+          conversation: chatConversation, apiKey: widget.openAIKey);
+      var bufferMemory = temp.bufferMemory();
+      final conversation = ConversationChain(llm: llm, memory: bufferMemory);
+      var prompt =
+          'Với đoạn hội thoại: ${temp.summarize()} và hiểu biết của bạn, hãy trả lời câu hỏi: $_enteredQuestion bằng loại ngôn ngữ mà câu hỏi đó đã sử dụng.';
+      await conversation.run(_enteredQuestion).then((value) {
         setState(() {
-          _responsedAnswer = value.choices.first.message.content.toString();
+          _responsedAnswer = value;
           chatConversation.add({'asistant': _responsedAnswer.trim()});
           isLoading = false;
         });
-        return value;
-      }).then((value) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-        return value;
       });
     } catch (e) {
       print(e.toString());
     }
   }
 
+  void summarizeData() {
+    var temp =
+        SummarizeData(conversation: chatConversation, apiKey: widget.openAIKey);
+    temp.summarize();
+  }
+
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      try {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {}
+      ;
+    });
+    var listView = ListView.builder(
+        controller: _scrollController,
+        itemCount: chatConversation.length,
+        itemBuilder: (ctx, index) {
+          final item = chatConversation[index];
+          final role = item.keys.first;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              role != 'user'
+                  ? const Expanded(
+                      child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Icon(
+                            Icons.android_sharp,
+                          )),
+                    )
+                  : Expanded(
+                      flex: 7,
+                      child: Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                // border: Border.all()
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(20)),
+                            margin:
+                                const EdgeInsets.only(left: 100, bottom: 10),
+                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
+                            child: Text(
+                              item.values.first,
+                              textAlign: TextAlign.start,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          )),
+                    ),
+              role != 'user'
+                  ? Expanded(
+                      flex: 7,
+                      child: Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            decoration: BoxDecoration(
+                                // border: Border.all()
+                                color: const Color.fromARGB(255, 73, 72, 72),
+                                borderRadius: BorderRadius.circular(20)),
+                            margin:
+                                const EdgeInsets.only(right: 100, bottom: 10),
+                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
+                            child: Column(children: [
+                              Text(
+                                item.values.first,
+                                textAlign: TextAlign.start,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              IconButton(
+                                  key: ValueKey(index),
+                                  onPressed: () {
+                                    textToSpeech(item.values.first, 'vi-VN');
+                                  },
+                                  icon: const Icon(Icons.volume_up_rounded)),
+                            ]),
+                          )))
+                  : const Expanded(
+                      child: Align(
+                          alignment: Alignment.topRight,
+                          child: Icon(Icons.person_2_rounded))),
+            ],
+          );
+        });
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat Coversation'),
+        actions: [
+          IconButton(
+              onPressed: () {
+                print(':_________________________');
+                summarizeData();
+              },
+              icon: Icon(Icons.summarize)),
+        ],
       ),
+      // drawer: const MainDrawer(),
       body:
           //  SingleChildScrollView(
           //   child:
@@ -156,85 +293,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           chatConversation.isNotEmpty
               ? Expanded(
-                  child: ListView.builder(
-                      controller: _scrollController,
-                      itemCount: chatConversation.length,
-                      itemBuilder: (ctx, index) {
-                        final item = chatConversation[index];
-                        final role = item.keys.first;
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            role != 'user'
-                                ? const Expanded(
-                                    child: Align(
-                                        alignment: Alignment.topLeft,
-                                        child: Icon(
-                                          Icons.android_sharp,
-                                        )),
-                                  )
-                                : Expanded(
-                                    flex: 7,
-                                    child: Align(
-                                        alignment: Alignment.topRight,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                              // border: Border.all()
-                                              color: Colors.blue,
-                                              borderRadius:
-                                                  BorderRadius.circular(20)),
-                                          margin: const EdgeInsets.only(
-                                              left: 100, bottom: 10),
-                                          padding: const EdgeInsets.fromLTRB(
-                                              10, 12, 8, 12),
-                                          child: Text(
-                                            item.values.first,
-                                            textAlign: TextAlign.start,
-                                            style:
-                                                const TextStyle(fontSize: 16),
-                                          ),
-                                        )),
-                                  ),
-                            role != 'user'
-                                ? Expanded(
-                                    flex: 7,
-                                    child: Align(
-                                        alignment: Alignment.topLeft,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                              // border: Border.all()
-                                              color: const Color.fromARGB(
-                                                  255, 73, 72, 72),
-                                              borderRadius:
-                                                  BorderRadius.circular(20)),
-                                          margin: const EdgeInsets.only(
-                                              right: 100, bottom: 10),
-                                          padding: const EdgeInsets.fromLTRB(
-                                              10, 12, 8, 12),
-                                          child: Column(children: [
-                                            Text(
-                                              item.values.first,
-                                              textAlign: TextAlign.start,
-                                              style:
-                                                  const TextStyle(fontSize: 16),
-                                            ),
-                                            IconButton(
-                                                key: ValueKey(index),
-                                                onPressed: () {
-                                                  textToSpeech(
-                                                      item.values.first,
-                                                      'vi-VN');
-                                                },
-                                                icon: Icon(Icons.speaker)),
-                                          ]),
-                                        )))
-                                : const Expanded(
-                                    child: Align(
-                                        alignment: Alignment.topRight,
-                                        child: Icon(Icons.person_2_rounded))),
-                          ],
-                        );
-                      }),
+                  child: listView,
                 )
               : Container(),
           Form(
@@ -244,6 +303,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Expanded(
                   child: TextFormField(
+                    focusNode: _focusNode,
                     controller: _chatController,
                     maxLength: 500,
                     decoration: const InputDecoration(
@@ -300,6 +360,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ? ElevatedButton(
                             onPressed: () {
                               renderQuestion();
+                              _focusNode.unfocus();
                               // getRequestFunction();
                               if (_enteredQuestion.isNotEmpty) {
                                 getResponseChatClone();

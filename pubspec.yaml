@@ -45,6 +45,10 @@ dependencies:
   cloud_firestore: ^4.8.4
   langchain: ^0.0.3
   langchain_openai: ^0.0.3
+  file_picker: ^5.3.3
+  pdf_render: ^1.4.0
+  read_pdf_text: ^0.2.1
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:

@@ -1,4 +1,4 @@
-import 'package:chat_bot/test_function/summarize_data.dart';
+import 'package:chat_bot/widgets/chat_drawer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/material.dart';
@@ -50,11 +50,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void textToSpeech(String content, String language) async {
     try {
-      // List<dynamic> languages = await _flutterTts.getLanguages;
-      // print("Danh sách ngôn ngữ hỗ trợ:");
-      // languages.forEach((language) {
-      //   print(language);
-      // });
       await _flutterTts.setLanguage(language);
       await _flutterTts.setPitch(1.0);
       await _flutterTts.speak(content);
@@ -158,6 +153,12 @@ class _ChatScreenState extends State<ChatScreen> {
           isLoading = false;
         });
         return value;
+      }).catchError((err) {
+        setState(() {
+          _responsedAnswer = err.toString();
+          chatConversation.add({'Ai': _responsedAnswer.trim()});
+          isLoading = false;
+        });
       }).then((value) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -170,37 +171,6 @@ class _ChatScreenState extends State<ChatScreen> {
       print(e.toString());
       isLoading = false;
     }
-
-    // try {
-    //   var llm = ChatOpenAI(
-    //       apiKey: widget.openAIKey,
-    //       model: 'gpt-3.5-turbo-0613',
-    //       temperature: 1.0);
-    //       var memory = ConversationBufferMemory();
-    // chatConversation.forEach((element) {
-    //   if (element.keys.first == 'Human') {
-    //     memory.chatHistory.addUserChatMessage(element.values.first);
-    //   } else {
-    //     memory.chatHistory.addAIChatMessage(element.values.first);
-    //   }
-    // });
-    // var memory_buffer = '';
-    // await memory.loadMemoryVariables().then((value) {
-    //   memory_buffer = value.values.first.toString();
-
-    // });
-    // var temp = SummarizeData(
-    //     conversation: chatConversation, apiKey: widget.openAIKey);
-    // var bufferMemory = temp.bufferMemory();
-    // final conversation = ConversationChain(llm: llm, memory: bufferMemory);
-    // var prompt =
-    // await conversation.run(prompt).then((value) {
-    //   setState(() {
-    //     _responsedAnswer = value;
-    //     chatConversation.add({'asistant': _responsedAnswer.trim()});
-    //     isLoading = false;
-    //   });
-    // });
   }
 
   @override
@@ -264,11 +234,13 @@ class _ChatScreenState extends State<ChatScreen> {
                             margin:
                                 const EdgeInsets.only(right: 100, bottom: 10),
                             padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
-                            child: Column(children: [
-                              Text(
-                                item.values.first,
-                                textAlign: TextAlign.start,
-                                style: const TextStyle(fontSize: 16),
+                            child: Row(children: [
+                              Expanded(
+                                child: Text(
+                                  item.values.first,
+                                  textAlign: TextAlign.start,
+                                  style: const TextStyle(fontSize: 16),
+                                ),
                               ),
                               IconButton(
                                   key: ValueKey(index),
@@ -292,7 +264,7 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(onPressed: () {}, icon: Icon(Icons.summarize)),
         ],
       ),
-      // drawer: const MainDrawer(),
+      drawer: MainDrawer(),
       body:
           //  SingleChildScrollView(
           //   child:

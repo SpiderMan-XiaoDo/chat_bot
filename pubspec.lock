@@ -137,6 +137,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  ffi:
+    dependency: transitive
+    description:
+      name: ffi
+      sha256: ed5337a5660c506388a9f012be0288fb38b49020ce2b45fe1f8b8323fe429f99
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
+  file_picker:
+    dependency: "direct main"
+    description:
+      name: file_picker
+      sha256: "21145c9c268d54b1f771d8380c195d2d6f655e0567dc1ca2f9c134c02c819e0a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.3.3"
   firebase_core:
     dependency: "direct main"
     description:
@@ -198,6 +214,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
+  flutter_plugin_android_lifecycle:
+    dependency: transitive
+    description:
+      name: flutter_plugin_android_lifecycle
+      sha256: "950e77c2bbe1692bc0874fc7fb491b96a4dc340457f4ea1641443d0a6c1ea360"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.15"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -240,6 +264,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.2"
+  intl:
+    dependency: "direct main"
+    description:
+      name: intl
+      sha256: "3bc132a9dbce73a7e4a21a17d06e1878839ffbf975568bc875c60537824b0c4d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.18.1"
   iregexp:
     dependency: transitive
     description:
@@ -344,6 +376,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.3"
+  pdf_render:
+    dependency: "direct main"
+    description:
+      name: pdf_render
+      sha256: b4a5b81af382a2270047d4191496e4efd60f19c2807f64dc9dc8f55c97b5c0d1
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   pedantic:
     dependency: transitive
     description:
@@ -408,6 +448,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.5"
+  read_pdf_text:
+    dependency: "direct main"
+    description:
+      name: read_pdf_text
+      sha256: "7e55a7ad033eae659204c7ba019030041bbad9435e33d7eb45a40410f82d6a64"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   rfc_6901:
     dependency: transitive
     description:
@@ -517,6 +565,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
+  win32:
+    dependency: transitive
+    description:
+      name: win32
+      sha256: f2add6fa510d3ae152903412227bda57d0d5a8da61d2c39c1fb022c9429a41c0
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.6"
 sdks:
   dart: ">=3.0.5 <4.0.0"
   flutter: ">=3.10.0"

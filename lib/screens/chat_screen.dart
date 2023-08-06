@@ -11,8 +11,10 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.openAIKey});
+  const ChatScreen(
+      {super.key, required this.openAIKey, required this.oldConversation});
   final String openAIKey;
+  final List<dynamic> oldConversation;
   @override
   State<StatefulWidget> createState() {
     return _ChatScreenState();
@@ -25,7 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // bool _speechEnabled = false;
   String _lastWords = '';
-  final List<Map<String, String>> chatConversation = [];
+  var chatConversation = [];
   final _formKey = GlobalKey<FormState>();
   final _chatController = TextEditingController();
   final _scrollController = ScrollController();
@@ -42,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       super.initState();
       OpenAI.apiKey = widget.openAIKey;
+      chatConversation = widget.oldConversation;
       _initSpeech();
     } catch (e) {
       print(e.toString());
@@ -60,7 +63,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    if (chatConversation.isNotEmpty) {
+    if (chatConversation.isNotEmpty &&
+        chatConversation.length != widget.oldConversation.length) {
       try {
         _chatController.dispose();
         FirebaseFirestore.instance.collection('chat').add({
@@ -131,11 +135,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       String history = '';
       chatConversation.forEach((element) {
-        history = history +
-            element.keys.first.toString() +
-            ': ' +
-            element.values.first +
-            '\n';
+        history = '$history${element.keys.first}: ${element.values.first}\n';
       });
       print('history: _________ $history');
       OpenAI.instance.chat.create(
@@ -159,6 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
           chatConversation.add({'Ai': _responsedAnswer.trim()});
           isLoading = false;
         });
+        return err;
       }).then((value) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,

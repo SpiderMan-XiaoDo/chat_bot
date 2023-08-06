@@ -54,7 +54,6 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     }
   }
 
-  @override
   void textToSpeech(String content, String language) async {
     try {
       await _flutterTts.setLanguage(language);
@@ -139,7 +138,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         var loader = TextLoader(filePath);
         loader.load().then((value) {
           const textSplitter = CharacterTextSplitter(
-            chunkSize: 20,
+            chunkSize: 2000,
             chunkOverlap: 0,
           );
           final docChunks = textSplitter.splitDocuments(value);
@@ -153,34 +152,35 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               );
             },
           ).toList();
-          print(
-              'Metadata________________________________________________: $textsWithSources');
-          final llm = ChatOpenAI(
-            apiKey: widget.openAiKey,
-            model: 'gpt-3.5-turbo-0613',
-            temperature: 0,
-          );
-          embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
+          // print(
+          //     'Metadata________________________________________________: $textsWithSources');
+          // final llm = ChatOpenAI(
+          //   apiKey: widget.openAiKey,
+          //   model: 'gpt-3.5-turbo-0613',
+          //   temperature: 0,
+          // );
+          // embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
 
-          var promptString =
-              'Hãy dịch đoạn văn bản sau trên bằng ngôn ngữ {language}:\n {text}';
-          var prompt = PromptTemplate.fromTemplate(promptString);
-          final summarizeChain = SummarizeChain.mapReduce(llm: llm);
-          summarizeChain.run(docChunks).then((value) {
-            final chain = LLMChain(llm: llm, prompt: prompt);
-            chain.run({'language': 'Viet Nam', 'text': value}).then((value) {
-              print('Tóm Tắt bằng tiếng Việt: \n $value');
-              setState(() {
-                isLoadedFile = true;
-                textSummarize = value;
-              });
-            });
-            return value;
-          }).catchError((err) {
-            print('Err: _______________${err.toString()}');
+          // var promptString =
+          //     'Hãy dịch đoạn văn bản sau trên bằng ngôn ngữ {language}:\n {text}';
+          // var prompt = PromptTemplate.fromTemplate(promptString);
+          // final summarizeChain =
+          //     SummarizeChain.mapReduce(llm: llm, summaryMaxTokens: 50);
+          // summarizeChain.run(docChunks).then((value) {
+          //   final chain = LLMChain(llm: llm, prompt: prompt);
+          //   chain.run({'language': 'Viet Nam', 'text': value}).then((value) {
+          //     print('Tóm Tắt bằng tiếng Việt: \n $value');
+          //     setState(() {
+          //       isLoadedFile = true;
+          //       textSummarize = value;
+          //     });
+          //   });
+          //   return value;
+          // }).catchError((err) {
+          //   print('Err: _______________${err.toString()}');
 
-            return err;
-          });
+          //   return err;
+          // });
         });
       }
     } catch (e) {
@@ -192,11 +192,13 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   void getChatResponse() async {
     try {
-      String history = '';
-      chatConversation.forEach((element) {
-        history = '$history${element.keys.first}: ${element.values.first}\n';
-      });
+      // String history = '';
+      // chatConversation.forEach((element) {
+      //   history = '$history${element.keys.first}: ${element.values.first}\n';
+      // });
       // embeddings, docSearch đã được định nghĩa trong loadFile
+      embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
+
       docSearch = await MemoryVectorStore.fromDocuments(
           documents: textsWithSources, embeddings: embeddings);
       final llm = ChatOpenAI(
@@ -205,7 +207,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
           temperature: 1);
       final qaChain = OpenAIQAWithSourcesChain(llm: llm);
       final docPrompt = PromptTemplate.fromTemplate(
-        'Hãy sử dụng nội dung đã cung cấp để trả lời các câu hỏi bằng tiếng Việt.\ncontent: {page_content}\nSource: {source}',
+        'Hãy sử dụng nội dung đã cung cấp để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không thể tìm thấy câu trả lời, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".\ncontent: {page_content}\nSource: {source}',
       );
       final finalQAChain = StuffDocumentsChain(
         llmChain: qaChain,
@@ -217,7 +219,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
       );
       retrievalQA(_enteredQuestion).then((value) {
         setState(() {
-          _responsedAnswer = value.toString();
+          _responsedAnswer = value['result'].toString();
           chatConversation.add({'Ai': _responsedAnswer.trim()});
           isLoading = false;
         });
@@ -235,6 +237,16 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      try {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {}
+      ;
+    });
     if (isSelected == true) {
       loaderFile();
       // loadFilePdf();
@@ -371,7 +383,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
                 selectedFile,
                 selectedFileName,
               ])),
-          Text(textSummarize),
+          // Text(textSummarize),
           chatConversation.isNotEmpty
               ? Expanded(
                   child: listView,

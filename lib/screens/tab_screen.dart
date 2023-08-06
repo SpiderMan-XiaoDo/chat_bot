@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class TabScreen extends StatefulWidget {
-  const TabScreen({super.key, required this.selectedIndex});
+  const TabScreen(
+      {super.key, required this.selectedIndex, required this.chatHistory});
+  final List<dynamic> chatHistory;
   final selectedIndex;
   @override
   State<StatefulWidget> createState() {
@@ -48,7 +50,10 @@ class _TabScreenState extends State<TabScreen> {
           : widget.selectedIndex == 0
               ? ReturnedHomeScreen(openAIKey: _initOpenAIKey)
               : widget.selectedIndex == 1
-                  ? ChatScreen(openAIKey: _initOpenAIKey)
+                  ? ChatScreen(
+                      openAIKey: _initOpenAIKey,
+                      oldConversation: widget.chatHistory,
+                    )
                   : SummarizeScreen(openAiKey: _initOpenAIKey);
     } else {
       activePage = currentIndex == 0
@@ -56,7 +61,10 @@ class _TabScreenState extends State<TabScreen> {
               ? NewHomeScreen()
               : ReturnedHomeScreen(openAIKey: _initOpenAIKey)
           : currentIndex == 1
-              ? ChatScreen(openAIKey: _initOpenAIKey)
+              ? ChatScreen(
+                  openAIKey: _initOpenAIKey,
+                  oldConversation: widget.chatHistory,
+                )
               : SummarizeScreen(openAiKey: _initOpenAIKey);
     }
     return Scaffold(

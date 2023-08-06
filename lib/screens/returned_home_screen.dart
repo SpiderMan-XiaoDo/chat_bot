@@ -121,8 +121,10 @@ class ReturnedHomeScreen extends StatelessWidget {
                         _deleteOpenAIKey();
                         Navigator.of(context).pop();
                         Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) =>
-                                const TabScreen(selectedIndex: 0)));
+                            builder: (context) => const TabScreen(
+                                  selectedIndex: 0,
+                                  chatHistory: [],
+                                )));
                       },
                       child: const Text('New Key')),
                   ElevatedButton(
@@ -132,8 +134,8 @@ class ReturnedHomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) =>
-                              const TabScreen(selectedIndex: 1),
+                          builder: (context) => const TabScreen(
+                              selectedIndex: 1, chatHistory: []),
                         ));
                       },
                       child: const Text('Use this Key')),

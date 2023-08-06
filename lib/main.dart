@@ -29,6 +29,7 @@ class MyApp extends StatelessWidget {
         ),
         home: const TabScreen(
           selectedIndex: 0,
+          chatHistory: [],
         ));
   }
 }

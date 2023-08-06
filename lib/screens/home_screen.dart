@@ -18,7 +18,6 @@ class _HomeScreenState extends State<HomeScreen> {
   var _enteredOpenAiKey = '';
   var _isLoading;
   var _initOpenAIKey = '';
-  var _initIDKey = '';
   var _isNewKey = false;
   var _keyCodeStatus;
   @override
@@ -71,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final Map<String, dynamic> listData = json.decode(response.body);
       for (final itemData in listData.entries) {
         setState(() {
-          _initIDKey = itemData.key;
+          // _initIDKey = itemData.key;
           _initOpenAIKey = itemData.value['OpenAIkey'];
           print('_InitIDKey: _________ $_initOpenAIKey');
         });
@@ -97,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final url = Uri.https(
           'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app',
           'openai-key.json');
-      final response = await http.post(url,
+      http.post(url,
           headers: {
             'Content-Type': 'application/json',
           },
@@ -114,7 +113,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _newChatScreen(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (ctx) => ChatScreen(openAIKey: _enteredOpenAiKey)));
+        builder: (ctx) => ChatScreen(
+              openAIKey: _enteredOpenAiKey,
+              oldConversation: [],
+            )));
   }
 
   String _keyToken() {
@@ -365,6 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _initOpenAIKey != '' ? _initOpenAIKey : _enteredOpenAiKey;
         activePage = ChatScreen(
           openAIKey: activeKey,
+          oldConversation: [],
         );
         _isLoading = false;
       }

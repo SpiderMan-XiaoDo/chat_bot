@@ -1,3 +1,4 @@
+import 'package:chat_bot/screens/tab_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +7,7 @@ class MainDrawer extends StatelessWidget {
   const MainDrawer({super.key});
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> listHistory = [];
+    List<dynamic> listHistory = [];
     Widget historyListView = Container();
     String dateToString(DateTime createdAt) {
       final formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
@@ -34,9 +35,14 @@ class MainDrawer extends StatelessWidget {
                 itemBuilder: (ctx, index) {
                   final item = listHistory[index];
                   var chatElementName = '';
+                  var chatHistory;
                   item.forEach((key, value) {
                     if (key == 'createdAt') {
                       chatElementName = dateToString(value.toDate());
+                    }
+                    if (key == 'conversation') {
+                      chatHistory = value;
+                      // print();
                     }
                   });
                   return ListTile(
@@ -52,7 +58,13 @@ class MainDrawer extends StatelessWidget {
                             fontSize: 16,
                           ),
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => TabScreen(
+                              selectedIndex: 1, chatHistory: chatHistory)));
+                    },
                   );
                 });
           }

@@ -54,6 +54,10 @@ chat_bot was built using the following open-source libraries and tools:
 * [Dart openAi](https://pub.dev/packages/dart_openai)
 * [Text To Speech](https://pub.dev/packages/flutter_tts)
 * [Speech To Text](https://pub.dev/packages/speech_to_text)
+* [LangChain](https://pub.dev/packages/langchain)
+* [LangChain OpenAI](https://pub.dev/packages/langchain_openai/versions)
+* [File Picker](https://pub.dev/packages/file_picker)
+* 
 
 
 

@@ -54,8 +54,7 @@ class _StateNewHomeScreen extends State<NewHomeScreen> {
             context: context,
             builder: (ctx) => AlertDialog(
               title: const Text('Invald input'),
-              content: const Text(
-                  'Please make sure a valid tile, amount, date and category was entered!'),
+              content: const Text('Please make sure a valid key was entered!'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -97,14 +96,20 @@ class _StateNewHomeScreen extends State<NewHomeScreen> {
         child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             decoration: const BoxDecoration(
-                gradient: LinearGradient(
-              colors: [
-                Color.fromARGB(255, 255, 255, 255),
-                Color.fromARGB(255, 255, 240, 240),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            )),
+              gradient: LinearGradient(
+                colors: [
+                  Color.fromARGB(255, 255, 255, 255),
+                  Color.fromARGB(255, 255, 240, 240),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              // image: DecorationImage(
+              //     image: NetworkImage(
+              //         'https://i.pinimg.com/564x/14/0b/62/140b62be90f68bcf5a32315cf0b773df.jpg'),
+              //     alignment: Alignment.bottomCenter,
+              //     fit: BoxFit.fitWidth),
+            ),
             child: Form(
               key: formKey,
               child: Column(

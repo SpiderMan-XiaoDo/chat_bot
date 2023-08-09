@@ -258,6 +258,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.fromLTRB(4, 0, 0, 4),
                           margin: const EdgeInsets.only(bottom: 8, right: 4),
                           decoration: BoxDecoration(
+                              image: const DecorationImage(
+                                image: NetworkImage(
+                                    'https://botnation.ai/site/wp-content/uploads/2022/04/ai-technology-brain-background-digital-transformation-concept.jpg.webp'),
+                              ),
                               color: const Color.fromARGB(255, 227, 239, 237),
                               borderRadius: BorderRadius.circular(10)),
                           child: const Center(

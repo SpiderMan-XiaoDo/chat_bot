@@ -44,7 +44,9 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       super.initState();
       OpenAI.apiKey = widget.openAIKey;
-      chatConversation = widget.oldConversation;
+      if (widget.oldConversation.isNotEmpty) {
+        chatConversation = widget.oldConversation;
+      }
       _initSpeech();
     } catch (e) {
       print(e.toString());

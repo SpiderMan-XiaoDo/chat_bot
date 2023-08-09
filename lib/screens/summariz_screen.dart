@@ -116,6 +116,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   }
 
   void filePicker() async {
+    FilePicker.platform.clearTemporaryFiles();
     FilePickerResult? result =
         await FilePicker.platform.pickFiles(withData: true);
     if (result != null) {
@@ -138,7 +139,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         var loader = TextLoader(filePath);
         loader.load().then((value) {
           const textSplitter = CharacterTextSplitter(
-            chunkSize: 2000,
+            chunkSize: 100,
             chunkOverlap: 0,
           );
           final docChunks = textSplitter.splitDocuments(value);
@@ -152,35 +153,6 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               );
             },
           ).toList();
-          // print(
-          //     'Metadata________________________________________________: $textsWithSources');
-          // final llm = ChatOpenAI(
-          //   apiKey: widget.openAiKey,
-          //   model: 'gpt-3.5-turbo-0613',
-          //   temperature: 0,
-          // );
-          // embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
-
-          // var promptString =
-          //     'Hãy dịch đoạn văn bản sau trên bằng ngôn ngữ {language}:\n {text}';
-          // var prompt = PromptTemplate.fromTemplate(promptString);
-          // final summarizeChain =
-          //     SummarizeChain.mapReduce(llm: llm, summaryMaxTokens: 50);
-          // summarizeChain.run(docChunks).then((value) {
-          //   final chain = LLMChain(llm: llm, prompt: prompt);
-          //   chain.run({'language': 'Viet Nam', 'text': value}).then((value) {
-          //     print('Tóm Tắt bằng tiếng Việt: \n $value');
-          //     setState(() {
-          //       isLoadedFile = true;
-          //       textSummarize = value;
-          //     });
-          //   });
-          //   return value;
-          // }).catchError((err) {
-          //   print('Err: _______________${err.toString()}');
-
-          //   return err;
-          // });
         });
       }
     } catch (e) {
@@ -192,46 +164,107 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   void getChatResponse() async {
     try {
-      // String history = '';
-      // chatConversation.forEach((element) {
-      //   history = '$history${element.keys.first}: ${element.values.first}\n';
-      // });
-      // embeddings, docSearch đã được định nghĩa trong loadFile
       embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
+      var docSearch = await MemoryVectorStore.fromDocuments(
+              documents: textsWithSources, embeddings: embeddings)
+          .then((value) {
+        print('docSearch:_________________ ${value.memoryVectors.first}');
+        return value;
+      }).catchError((err) {
+        setState(() {
+          _responsedAnswer = err.toString();
+          chatConversation.add({'Ai': _responsedAnswer.trim()});
+          isLoading = false;
+        });
+        return MemoryVectorStore(embeddings: embeddings);
+      });
 
-      docSearch = await MemoryVectorStore.fromDocuments(
-          documents: textsWithSources, embeddings: embeddings);
       final llm = ChatOpenAI(
           apiKey: widget.openAiKey,
           model: 'gpt-3.5-turbo-0613',
-          temperature: 1);
+          temperature: 0.5);
       final qaChain = OpenAIQAWithSourcesChain(llm: llm);
       final docPrompt = PromptTemplate.fromTemplate(
-        'Hãy sử dụng nội dung đã cung cấp để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không thể tìm thấy câu trả lời, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".\ncontent: {page_content}\nSource: {source}',
+        '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
+        Nếu câu hỏi là các câu tương tự như: 'Xin chào', 'Hello'... hãy phản hồi: 'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.'.
+        .\ncontent: {page_content}\nSource: {source}
+        ''',
       );
       final finalQAChain = StuffDocumentsChain(
         llmChain: qaChain,
         documentPrompt: docPrompt,
       );
+      print('Hello_retrievalQA_1');
+
       final retrievalQA = RetrievalQAChain(
         retriever: docSearch.asRetriever(),
         combineDocumentsChain: finalQAChain,
       );
-      retrievalQA(_enteredQuestion).then((value) {
+
+      final res = await retrievalQA(_enteredQuestion);
+      if (res['statusCode'] == 429) {
+        _responsedAnswer =
+            'Bạn đã giữ quá nhiều yêu cầu(Tối Tối đa 3 yêu cầu/phút), hãy thử lại sau 20s.';
+        chatConversation.add({'Ai': _responsedAnswer.trim()});
+        isLoading = false;
+      } else {
         setState(() {
-          _responsedAnswer = value['result'].toString();
+          print(res.toString());
+          _responsedAnswer = res['result'].toString();
           chatConversation.add({'Ai': _responsedAnswer.trim()});
           isLoading = false;
         });
-      }).catchError((error) {
-        setState(() {
-          _responsedAnswer = error.toString();
-          chatConversation.add({'Ai': _responsedAnswer.trim()});
-          isLoading = false;
-        });
-      });
+      }
+      // print('Hello_retrievalQA_2');
+      // retrievalQA(_enteredQuestion).then((value) {
+      //   print('Hello_________');
+
+      //   setState(() {
+      //     print('Hello_________');
+      //     if (value.isEmpty || value == null) {
+      //       _responsedAnswer =
+      //           'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.';
+      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
+      //       isLoading = false;
+      //     } else if (value['result'] != Null) {
+      //       _responsedAnswer = value['result'].toString();
+      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
+      //       isLoading = false;
+      //     } else {
+      //       _responsedAnswer =
+      //           'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.';
+      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
+      //       isLoading = false;
+      //     }
+      //   });
+      //   return value;
+      // }).catchError((error) {
+      //   setState(() {
+      //     print('Hello');
+      //     _responsedAnswer = error.toString();
+      //     chatConversation.add({'Ai': _responsedAnswer.trim()});
+      //     isLoading = false;
+      //   });
+      //   return error;
+      // });
     } catch (err) {
-      print('err: ${err.toString()}');
+      {
+        if (err.toString().contains('statusCode: 429')) {
+          setState(() {
+            _responsedAnswer =
+                'Tài khoản của bạn bị giới hạn 3 req/min, hãy nâng cấp hoặc thử lại sau 20s.';
+            chatConversation.add({'Ai': _responsedAnswer.trim()});
+            isLoading = false;
+          });
+        } else {
+          setState(() {
+            _responsedAnswer =
+                'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp. ${err.toString()}';
+            chatConversation.add({'Ai': _responsedAnswer.trim()});
+            isLoading = false;
+          });
+        }
+      }
     }
   }
 

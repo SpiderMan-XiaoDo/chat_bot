@@ -29,14 +29,20 @@ class ReturnedHomeScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
         decoration: const BoxDecoration(
-            gradient: LinearGradient(
-          colors: [
-            Color.fromARGB(255, 255, 255, 255),
-            Color.fromARGB(255, 255, 240, 240),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        )),
+          gradient: LinearGradient(
+            colors: [
+              Color.fromARGB(255, 255, 255, 255),
+              Color.fromARGB(255, 255, 240, 240),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          // image: DecorationImage(
+          //     image: NetworkImage(
+          //         'https://i.pinimg.com/564x/77/0f/e4/770fe4c49671635f91b0f07d9f374e5c.jpg'),
+          //     alignment: Alignment.bottomCenter,
+          //     fit: BoxFit.fitWidth),
+        ),
         child: Form(
           // key: _formKey,
           child: Column(

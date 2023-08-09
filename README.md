@@ -25,14 +25,17 @@ samples, guidance on mobile development, and a full API reference.
 
 * Advanced AI-powered writing assistance
 * Beautiful and intuitive UI
-* Support for all formatting: bold, italics, links, code blocks, and bullets
+* Chat and Summarize conversation.
 
 ## Screenshots
 
 | Screenshot 1                                 | Screenshot 2                                 | Screenshot 3                                 |
 |----------------------------------------------|----------------------------------------------|----------------------------------------------|
-| ![Screenshot_1690425426](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/9e964c5d-1968-4161-8972-0047f9defff0) |![Screenshot_1690426538](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/4030b380-58ff-4b5a-880f-994e69f7e827)|![Screenshot_1690426388](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/59c6536d-83a5-414f-94da-7136fa4e0b75)
- |
+| ![Screenshot_1691564306](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/1d95b446-e567-4069-addf-b847f8dd28ce) |![Screenshot_1691564355](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/6d52d8fd-c9a9-4c37-81b9-acf9a42e8025)|![Screenshot_1691564461](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/7afd5291-1fe0-4540-87e8-cf7e189925a5)|
+ | Screenshot 1                                 | Screenshot 2                                 | Screenshot 3                                 |
+|----------------------------------------------|----------------------------------------------|----------------------------------------------|
+|![Screenshot_1691564562](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/ae3bda2a-4abb-4da4-a4a0-98c40f528d5d)|![Screenshot_1691564952](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/1c3d14b5-6549-42ee-805e-2d94efa9cdaf)|![Screenshot_1691564650](https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/b6ec9a36-2999-442b-b897-17780e916e10)
+|
 
 ## Installation
 

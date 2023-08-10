@@ -1,3 +1,4 @@
+import 'package:chat_bot/screens/tab_screen.dart';
 import 'package:chat_bot/widgets/chat_drawer.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dart_openai/dart_openai.dart';
@@ -38,6 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
   var isLoading = false;
   var initValueTextField = '';
   var _responsedAnswer = '';
+  var title = 'New chat';
   final _focusNode = FocusNode();
   @override
   void initState() {
@@ -45,7 +47,9 @@ class _ChatScreenState extends State<ChatScreen> {
       super.initState();
       OpenAI.apiKey = widget.openAIKey;
       if (widget.oldConversation.isNotEmpty) {
-        chatConversation = widget.oldConversation;
+        widget.oldConversation.forEach((element) {
+          chatConversation.add(element);
+        });
       }
       _initSpeech();
     } catch (e) {
@@ -65,6 +69,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    print('Da goi ham dispose');
+    print('ChatConversation:________ ${chatConversation.length}');
+    print('widget.oldConversation:______ ${widget.oldConversation.length}');
     if (chatConversation.isNotEmpty &&
         chatConversation.length != widget.oldConversation.length) {
       try {
@@ -74,9 +81,11 @@ class _ChatScreenState extends State<ChatScreen> {
           "createdAt": Timestamp.now(),
           'deletedAt': null,
           'summarize': null,
-          'title': null,
+          'title': title,
         });
-      } catch (e) {}
+      } catch (e) {
+        print(e.toString());
+      }
     }
     _focusNode.dispose();
     super.dispose();
@@ -97,6 +106,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+//Hello
   void _stopListening() async {
     await _speechToText.stop();
     setState(() {});
@@ -139,8 +149,28 @@ class _ChatScreenState extends State<ChatScreen> {
       chatConversation.forEach((element) {
         history = '$history${element.keys.first}: ${element.values.first}\n';
       });
-      print('history: _________ $history');
-      OpenAI.instance.chat.create(
+      String historyOfTile = '';
+      if (chatConversation.length >= 5 && title == 'New chat') {
+        for (var index = 0; index < 6; index += 2) {
+          historyOfTile +=
+              '${chatConversation.elementAt(index).keys.first}: ${chatConversation.elementAt(index).values.first}\n';
+        }
+        var titleRes = await OpenAI.instance.chat.create(
+          model: 'gpt-3.5-turbo',
+          messages: [
+            OpenAIChatCompletionChoiceMessageModel(
+              content:
+                  'Hãy đặt tiêu đề cho nội dung sau, với điều kiện tiêu đề không dài quá 6 từ: $historyOfTile',
+              role: OpenAIChatMessageRole.user,
+            ),
+          ],
+        );
+        title = titleRes.choices.first.message.content.toString();
+        print('title:___________________: $title');
+      }
+
+      print('title:___________________: $title');
+      var res = await OpenAI.instance.chat.create(
         model: "gpt-3.5-turbo",
         messages: [
           OpenAIChatCompletionChoiceMessageModel(
@@ -148,30 +178,33 @@ class _ChatScreenState extends State<ChatScreen> {
             role: OpenAIChatMessageRole.user,
           ),
         ],
-      ).then((value) {
-        setState(() {
-          _responsedAnswer = value.choices.first.message.content.toString();
-          chatConversation.add({'Ai': _responsedAnswer.trim()});
-          isLoading = false;
-        });
-        return value;
-      }).catchError((err) {
-        setState(() {
-          _responsedAnswer = err.toString();
-          chatConversation.add({'Ai': _responsedAnswer.trim()});
-          isLoading = false;
-        });
-        return err;
-      }).then((value) {
+      );
+      setState(() {
+        _responsedAnswer = res.choices.first.message.content.toString();
+        chatConversation.add({'Ai': _responsedAnswer.trim()});
+        isLoading = false;
+      });
+      setState(() {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
-        return value;
       });
     } catch (e) {
-      print(e.toString());
+      setState(() {
+        _responsedAnswer = e.toString();
+        chatConversation.add({'Ai': _responsedAnswer.trim()});
+        isLoading = false;
+      });
+      setState(() {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+
       isLoading = false;
     }
   }
@@ -264,7 +297,14 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text('Chat Coversation'),
         actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.summarize)),
+          ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) =>
+                        const TabScreen(selectedIndex: 1, chatHistory: [])));
+              },
+              child: const Text('New Chat')),
         ],
       ),
       drawer: MainDrawer(),

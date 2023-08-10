@@ -204,7 +204,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
       final res = await retrievalQA(_enteredQuestion);
       if (res['statusCode'] == 429) {
         _responsedAnswer =
-            'Bạn đã giữ quá nhiều yêu cầu(Tối Tối đa 3 yêu cầu/phút), hãy thử lại sau 20s.';
+            'Bạn đã gửi quá nhiều yêu cầu(Tối Tối đa 3 yêu cầu/phút), hãy thử lại sau 20s.';
         chatConversation.add({'Ai': _responsedAnswer.trim()});
         isLoading = false;
       } else {

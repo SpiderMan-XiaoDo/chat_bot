@@ -81,6 +81,7 @@ class MainDrawer extends StatelessWidget {
                                 documentRef.delete();
                                 Navigator.pop(ctx);
                                 Navigator.of(context).pop();
+                                Navigator.of(context).pop();
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (context) => const TabScreen(
                                         selectedIndex: 1, chatHistory: [])));

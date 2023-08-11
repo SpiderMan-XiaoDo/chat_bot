@@ -69,6 +69,16 @@ dart pub global activate flutterfire_cli
 ```bash
 flutterfire configure
 ````
+Then, you could delete my Realtime Database url, and paste your Realtime Database url in 4 files: [home_screen.dart], [new_home_screen.dart], [returned_home_screen.dart], [tab_screen.dart].
+  1. Find this code below:
+````bash
+final url = Uri.https(
+        'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app',
+        'openai-key.json');
+````
+    
+    
+  3. Change this line  'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app' with your url.
 ## Acknowledgements
 
 chat_bot was built using the following open-source libraries and tools:

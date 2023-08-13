@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:chat_bot/screens/tab_screen.dart';
+import 'package:chat_bot/widgets/summarize_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -13,9 +15,13 @@ class SummarizeScreen extends StatefulWidget {
   const SummarizeScreen(
       {super.key,
       required this.openAiKey,
-      required this.chatSummarizeConversation});
+      required this.chatSummarizeConversation,
+      required this.oldFilePath,
+      required this.oldFileContent});
   final String openAiKey;
-  final List<Map<String, String>> chatSummarizeConversation;
+  final List<dynamic> chatSummarizeConversation;
+  final String oldFilePath;
+  final String oldFileContent;
   @override
   State<StatefulWidget> createState() {
     return _SummarizeScreenState();
@@ -28,7 +34,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   // bool _speechEnabled = false;
   String _lastWords = '';
-  final List<Map<String, String>> chatConversation = [];
+  final List<dynamic> chatConversation = [];
   final _formKey = GlobalKey<FormState>();
   final _chatController = TextEditingController();
   final _scrollController = ScrollController();
@@ -54,12 +60,22 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   late OpenAIQAWithSourcesChain qaChain;
   late StuffDocumentsChain finalQAChain;
   late RetrievalQAChain retrievalQA;
-  late String fileContent;
+  String fileContent = '';
 
   @override
   void initState() {
     try {
       super.initState();
+      if (widget.oldFilePath.isNotEmpty) {
+        filePath = widget.oldFilePath;
+        fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+        fileType = filePath.substring(filePath.lastIndexOf('.') + 1);
+        fileContent = widget.oldFileContent;
+        widget.chatSummarizeConversation.forEach((element) {
+          chatConversation.add(element);
+        });
+        isSelected = true;
+      }
       _initSpeech();
     } catch (e) {
       print(e.toString());
@@ -154,16 +170,12 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     try {
       if (filePath.isNotEmpty && isLoadedFile == false) {
         var loader = TextLoader(filePath);
-
         loader.load().then((value) {
+          print('Value Length:__________ ${value.length}');
           const textSplitter = CharacterTextSplitter(
             chunkSize: 100,
             chunkOverlap: 0,
           );
-          value.forEach((element) {
-            print('pageContent: ${element.pageContent}');
-            print('metaData: ${element.metadata}');
-          });
           var fileToDoc = Document(pageContent: fileContent);
           // final docChunks = textSplitter.splitDocuments(value);
           final docChunks = textSplitter.splitDocuments([fileToDoc]);
@@ -188,7 +200,6 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               .then((value) {
             print('docSearch:_________________ ${value.memoryVectors.first}');
             docSearch = value;
-
             qaChain = OpenAIQAWithSourcesChain(llm: llm);
             final docPrompt = PromptTemplate.fromTemplate(
               '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
@@ -206,13 +217,23 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               retriever: docSearch.asRetriever(),
               combineDocumentsChain: finalQAChain,
             );
-            retrievalQA('Hãy tóm tắt file dữ liệu trên').then((value) {
+            print('Cong doan tom tat');
+            retrievalQA(
+                    '''Hãy lựa chọn một số câu hỏi sau để tóm tắt văn bản :\n Ai là nhân vật chính.\n Sự kiện chính trong văn bản.
+            \n Người viết ra văn bản đó là ai.\nBối cảnh văn bản đề cập đến...để có thể tóm tắt nó.
+            Cố gắng trả lời nhiều câu hỏi nhất có có thể.
+            ''')
+                // retrievalQA('''Ai là nhân vật chính trong nội dung trên?
+                // ''')
+                .then((value) {
+              print('Cong doan tom tat 2');
               if (value['statusCode'] == 429) {
                 setState(() {
                   textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
                 });
               } else {
                 setState(() {
+                  print('value:________________ $value');
                   textSummarize = value['result'].toString();
                   isLoadedSummarize = true;
                 });
@@ -221,7 +242,6 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
             return value;
           }).catchError((err) {
             setState(() {
-              _responsedAnswer = err.toString();
               chatConversation.add({'Ai': _responsedAnswer.trim()});
               isLoading = false;
               isLoadedSummarize = true;
@@ -229,10 +249,20 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
             docSearch = MemoryVectorStore(embeddings: embeddings);
             return MemoryVectorStore(embeddings: embeddings);
           });
+        }).catchError((err) {
+          setState(() {
+            textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+            isLoading = false;
+            isLoadedSummarize = true;
+          });
         });
       }
     } catch (e) {
-      print(e.toString());
+      setState(() {
+        textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+        isLoading = false;
+        isLoadedSummarize = true;
+      });
     }
   }
 
@@ -276,26 +306,32 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   @override
   void dispose() {
+    super.dispose();
     print('Da goi ham dispose');
     print('ChatConversation:________ ${chatConversation.length}');
     // print('widget.oldConversation:______ ${widget.oldConversation.length}');
-    // if (chatConversation.isNotEmpty &&
-    //     chatConversation.length != widget.oldConversation.length) {
-    try {
-      _chatController.dispose();
-      FirebaseFirestore.instance.collection('summarize').add({
-        'conversation': chatConversation,
-        "createdAt": Timestamp.now(),
-        'deletedAt': null,
-        'summarize': textSummarize,
-        'fileName': fileName,
-        'filePath': filePath,
-        'documentContent': fileContent
-      });
-    } catch (e) {
-      print(e.toString());
+    if (chatConversation.isNotEmpty &&
+        // &&
+        // chatConversation.length != widget.oldConversation.length
+        textSummarize.isNotEmpty &&
+        fileName.isNotEmpty &&
+        filePath.isNotEmpty &&
+        fileContent.isNotEmpty) {
+      try {
+        _chatController.dispose();
+        FirebaseFirestore.instance.collection('summarize').add({
+          'conversation': chatConversation,
+          "createdAt": Timestamp.now(),
+          'deletedAt': null,
+          'summarize': textSummarize,
+          'fileName': fileName,
+          'filePath': filePath,
+          'documentContent': fileContent
+        });
+      } catch (e) {
+        print(e.toString());
+      }
     }
-    super.dispose();
   }
 
   @override
@@ -533,7 +569,23 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Summarize data'),
+        actions: [
+          ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const TabScreen(
+                          selectedIndex: 2,
+                          chatHistory: [],
+                          filePath: '',
+                          oldFileContent: '',
+                          summarizeChatHistory: [],
+                        )));
+              },
+              child: const Text('New Summarize')),
+        ],
       ),
+      drawer: const MainSummarizeDrawer(),
       body:
           //  Container(
           //   child: Column(

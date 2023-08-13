@@ -46,8 +46,12 @@ class _StateNewHomeScreen extends State<NewHomeScreen> {
               }));
           Navigator.of(context).pop();
           Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) =>
-                const TabScreen(selectedIndex: 1, chatHistory: []),
+            builder: (context) => const TabScreen(
+                selectedIndex: 1,
+                chatHistory: [],
+                filePath: '',
+                summarizeChatHistory: [],
+                oldFileContent: ''),
           ));
         } else {
           showDialog(

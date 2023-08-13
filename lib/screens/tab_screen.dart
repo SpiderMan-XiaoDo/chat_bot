@@ -7,10 +7,19 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class TabScreen extends StatefulWidget {
-  const TabScreen(
-      {super.key, required this.selectedIndex, required this.chatHistory});
+  const TabScreen({
+    super.key,
+    required this.selectedIndex,
+    required this.chatHistory,
+    required this.summarizeChatHistory,
+    required this.filePath,
+    required this.oldFileContent,
+  });
   final List<dynamic> chatHistory;
   final selectedIndex;
+  final List<dynamic> summarizeChatHistory;
+  final String filePath;
+  final String oldFileContent;
   @override
   State<StatefulWidget> createState() {
     return _TabScreenState();
@@ -56,7 +65,9 @@ class _TabScreenState extends State<TabScreen> {
                     )
                   : SummarizeScreen(
                       openAiKey: _initOpenAIKey,
-                      chatSummarizeConversation: [],
+                      chatSummarizeConversation: widget.summarizeChatHistory,
+                      oldFilePath: widget.filePath,
+                      oldFileContent: widget.oldFileContent,
                     );
     } else {
       activePage = currentIndex == 0
@@ -70,7 +81,9 @@ class _TabScreenState extends State<TabScreen> {
                 )
               : SummarizeScreen(
                   openAiKey: _initOpenAIKey,
-                  chatSummarizeConversation: [],
+                  chatSummarizeConversation: widget.summarizeChatHistory,
+                  oldFilePath: widget.filePath,
+                  oldFileContent: widget.oldFileContent,
                 );
     }
     return Scaffold(

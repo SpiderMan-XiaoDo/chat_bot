@@ -130,6 +130,9 @@ class ReturnedHomeScreen extends StatelessWidget {
                             builder: (context) => const TabScreen(
                                   selectedIndex: 0,
                                   chatHistory: [],
+                                  filePath: '',
+                                  summarizeChatHistory: [],
+                                  oldFileContent: '',
                                 )));
                       },
                       child: const Text('New Key')),
@@ -141,7 +144,11 @@ class ReturnedHomeScreen extends StatelessWidget {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => const TabScreen(
-                              selectedIndex: 1, chatHistory: []),
+                              selectedIndex: 1,
+                              chatHistory: [],
+                              filePath: '',
+                              summarizeChatHistory: [],
+                              oldFileContent: ''),
                         ));
                       },
                       child: const Text('Use this Key')),

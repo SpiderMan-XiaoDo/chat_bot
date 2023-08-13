@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class MainDrawer extends StatelessWidget {
-  const MainDrawer({super.key});
+class MainSummarizeDrawer extends StatelessWidget {
+  const MainSummarizeDrawer({super.key});
   @override
   Widget build(BuildContext context) {
     List<dynamic> listHistory = [];
@@ -17,7 +17,7 @@ class MainDrawer extends StatelessWidget {
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
-          .collection('chat')
+          .collection('summarize')
           .orderBy(
             "createdAt",
             descending: true,
@@ -32,31 +32,40 @@ class MainDrawer extends StatelessWidget {
               listHistory.add(data);
               listHistoryID.add(document.id);
             }
-            final colectionRef = FirebaseFirestore.instance.collection('chat');
+            final colectionRef =
+                FirebaseFirestore.instance.collection('summarize');
             historyListView = ListView.builder(
                 itemCount: listHistory.length,
                 itemBuilder: (ctx, index) {
                   final item = listHistory[index];
                   var chatElementName = '';
-                  var chatHistory = [];
+                  var chatSummarizeHistory = [];
                   var chatId = listHistoryID[index];
-                  print('ChatID:__________ $chatId');
+                  var filePath = '';
+                  var fileContent = '';
+                  print('SummarizeID:__________ $chatId');
                   item.forEach((key, value) {
                     // if (key == 'createdAt') {
                     //   chatElementName = dateToString(value.toDate());
                     // }
-                    if (key == 'title') {
+                    if (key == 'fileName') {
                       chatElementName = value.toString();
                     }
                     if (key == 'conversation') {
-                      chatHistory = value;
+                      chatSummarizeHistory = value;
                       // print();
+                    }
+                    if (key == 'filePath') {
+                      filePath = value;
+                    }
+                    if (key == 'documentContent') {
+                      fileContent = value;
                     }
                   });
                   return ListTile(
                     focusColor: Color.fromARGB(255, 250, 235, 235),
                     hoverColor: Color.fromARGB(255, 250, 235, 235),
-                    leading: Icon(Icons.chat_bubble_outlined,
+                    leading: Icon(Icons.summarize_sharp,
                         size: 20,
                         color: Theme.of(context).colorScheme.onBackground),
                     title: Text(
@@ -70,7 +79,7 @@ class MainDrawer extends StatelessWidget {
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Text('Delete chat?'),
+                          title: const Text('Delete summarize history?'),
                           content: const Text(
                               "Warning: You can't undo this action!"),
                           actions: [
@@ -84,11 +93,11 @@ class MainDrawer extends StatelessWidget {
                                 Navigator.of(context).pop();
                                 Navigator.of(context).push(MaterialPageRoute(
                                     builder: (context) => const TabScreen(
-                                          selectedIndex: 1,
+                                          selectedIndex: 2,
                                           chatHistory: [],
+                                          oldFileContent: '',
                                           filePath: '',
                                           summarizeChatHistory: [],
-                                          oldFileContent: '',
                                         )));
                               },
                               child: const Text('Okay'),
@@ -107,11 +116,11 @@ class MainDrawer extends StatelessWidget {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => TabScreen(
-                                selectedIndex: 1,
-                                chatHistory: chatHistory,
-                                filePath: '',
-                                summarizeChatHistory: [],
-                                oldFileContent: '',
+                                selectedIndex: 2,
+                                chatHistory: [],
+                                summarizeChatHistory: chatSummarizeHistory,
+                                filePath: filePath,
+                                oldFileContent: fileContent,
                               )));
                     },
                   );
@@ -146,7 +155,7 @@ class MainDrawer extends StatelessWidget {
                     const SizedBox(
                       width: 18,
                     ),
-                    Text('Chat history',
+                    Text('History',
                         style: Theme.of(context).textTheme.titleLarge!.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                             )),

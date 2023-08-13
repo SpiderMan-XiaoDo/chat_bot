@@ -7,10 +7,15 @@ import 'package:langchain/langchain.dart';
 import 'package:langchain_openai/langchain_openai.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SummarizeScreen extends StatefulWidget {
-  const SummarizeScreen({super.key, required this.openAiKey});
+  const SummarizeScreen(
+      {super.key,
+      required this.openAiKey,
+      required this.chatSummarizeConversation});
   final String openAiKey;
+  final List<Map<String, String>> chatSummarizeConversation;
   @override
   State<StatefulWidget> createState() {
     return _SummarizeScreenState();
@@ -28,7 +33,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   final _chatController = TextEditingController();
   final _scrollController = ScrollController();
 
-  var _enteredQuestion = '';
+  var enteredQuestion = '';
   var isText = false;
   var isListen = false;
   var isLoading = false;
@@ -41,9 +46,16 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   var isSelected = false;
   var textSummarize = '';
   var isLoadedFile = false;
-  dynamic textsWithSources = [];
+  var isLoadedSummarize = false;
+  dynamic llm;
+  List<Document> textsWithSources = [];
   dynamic embeddings;
-  dynamic docSearch;
+  late MemoryVectorStore docSearch;
+  late OpenAIQAWithSourcesChain qaChain;
+  late StuffDocumentsChain finalQAChain;
+  late RetrievalQAChain retrievalQA;
+  late String fileContent;
+
   @override
   void initState() {
     try {
@@ -97,7 +109,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       setState(() {
-        chatConversation.add({'Human': _enteredQuestion});
+        chatConversation.add({'Human': enteredQuestion});
         _formKey.currentState!.reset();
         _chatController.clear();
         isText = false;
@@ -122,6 +134,11 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     if (result != null) {
       File file = File(result.files.single.path!);
       setState(() {
+        file.readAsString().then((value) {
+          fileContent = value;
+          print('FileContent: $fileContent');
+          return value;
+        });
         filePath = file.path;
         fileName = file.path.substring(file.path.lastIndexOf('/') + 1);
         fileType = file.path.substring(file.path.lastIndexOf('.') + 1);
@@ -137,12 +154,19 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     try {
       if (filePath.isNotEmpty && isLoadedFile == false) {
         var loader = TextLoader(filePath);
+
         loader.load().then((value) {
           const textSplitter = CharacterTextSplitter(
             chunkSize: 100,
             chunkOverlap: 0,
           );
-          final docChunks = textSplitter.splitDocuments(value);
+          value.forEach((element) {
+            print('pageContent: ${element.pageContent}');
+            print('metaData: ${element.metadata}');
+          });
+          var fileToDoc = Document(pageContent: fileContent);
+          // final docChunks = textSplitter.splitDocuments(value);
+          final docChunks = textSplitter.splitDocuments([fileToDoc]);
           textsWithSources = docChunks.map(
             (e) {
               return e.copyWith(
@@ -153,6 +177,58 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               );
             },
           ).toList();
+          llm = ChatOpenAI(
+              apiKey: widget.openAiKey,
+              model: 'gpt-3.5-turbo-0613',
+              temperature: 0.5);
+          isLoadedFile = true;
+          embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
+          MemoryVectorStore.fromDocuments(
+                  documents: textsWithSources, embeddings: embeddings)
+              .then((value) {
+            print('docSearch:_________________ ${value.memoryVectors.first}');
+            docSearch = value;
+
+            qaChain = OpenAIQAWithSourcesChain(llm: llm);
+            final docPrompt = PromptTemplate.fromTemplate(
+              '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
+        Nếu câu hỏi là các câu tương tự như: 'Xin chào', 'Hello'... hãy phản hồi: 'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.'.
+        .\ncontent: {page_content}\nSource: {source}
+        ''',
+            );
+            // final
+            finalQAChain = StuffDocumentsChain(
+              llmChain: qaChain,
+              documentPrompt: docPrompt,
+            );
+            // final
+            retrievalQA = RetrievalQAChain(
+              retriever: docSearch.asRetriever(),
+              combineDocumentsChain: finalQAChain,
+            );
+            retrievalQA('Hãy tóm tắt file dữ liệu trên').then((value) {
+              if (value['statusCode'] == 429) {
+                setState(() {
+                  textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+                });
+              } else {
+                setState(() {
+                  textSummarize = value['result'].toString();
+                  isLoadedSummarize = true;
+                });
+              }
+            });
+            return value;
+          }).catchError((err) {
+            setState(() {
+              _responsedAnswer = err.toString();
+              chatConversation.add({'Ai': _responsedAnswer.trim()});
+              isLoading = false;
+              isLoadedSummarize = true;
+            });
+            docSearch = MemoryVectorStore(embeddings: embeddings);
+            return MemoryVectorStore(embeddings: embeddings);
+          });
         });
       }
     } catch (e) {
@@ -164,44 +240,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   void getChatResponse() async {
     try {
-      embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
-      var docSearch = await MemoryVectorStore.fromDocuments(
-              documents: textsWithSources, embeddings: embeddings)
-          .then((value) {
-        print('docSearch:_________________ ${value.memoryVectors.first}');
-        return value;
-      }).catchError((err) {
-        setState(() {
-          _responsedAnswer = err.toString();
-          chatConversation.add({'Ai': _responsedAnswer.trim()});
-          isLoading = false;
-        });
-        return MemoryVectorStore(embeddings: embeddings);
-      });
-
-      final llm = ChatOpenAI(
-          apiKey: widget.openAiKey,
-          model: 'gpt-3.5-turbo-0613',
-          temperature: 0.5);
-      final qaChain = OpenAIQAWithSourcesChain(llm: llm);
-      final docPrompt = PromptTemplate.fromTemplate(
-        '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
-        Nếu câu hỏi là các câu tương tự như: 'Xin chào', 'Hello'... hãy phản hồi: 'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.'.
-        .\ncontent: {page_content}\nSource: {source}
-        ''',
-      );
-      final finalQAChain = StuffDocumentsChain(
-        llmChain: qaChain,
-        documentPrompt: docPrompt,
-      );
-      print('Hello_retrievalQA_1');
-
-      final retrievalQA = RetrievalQAChain(
-        retriever: docSearch.asRetriever(),
-        combineDocumentsChain: finalQAChain,
-      );
-
-      final res = await retrievalQA(_enteredQuestion);
+      final res = await retrievalQA(enteredQuestion);
       if (res['statusCode'] == 429) {
         _responsedAnswer =
             'Bạn đã gửi quá nhiều yêu cầu(Tối Tối đa 3 yêu cầu/phút), hãy thử lại sau 20s.';
@@ -209,44 +248,11 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         isLoading = false;
       } else {
         setState(() {
-          print(res.toString());
           _responsedAnswer = res['result'].toString();
           chatConversation.add({'Ai': _responsedAnswer.trim()});
           isLoading = false;
         });
       }
-      // print('Hello_retrievalQA_2');
-      // retrievalQA(_enteredQuestion).then((value) {
-      //   print('Hello_________');
-
-      //   setState(() {
-      //     print('Hello_________');
-      //     if (value.isEmpty || value == null) {
-      //       _responsedAnswer =
-      //           'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.';
-      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
-      //       isLoading = false;
-      //     } else if (value['result'] != Null) {
-      //       _responsedAnswer = value['result'].toString();
-      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
-      //       isLoading = false;
-      //     } else {
-      //       _responsedAnswer =
-      //           'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.';
-      //       chatConversation.add({'Ai': _responsedAnswer.trim()});
-      //       isLoading = false;
-      //     }
-      //   });
-      //   return value;
-      // }).catchError((error) {
-      //   setState(() {
-      //     print('Hello');
-      //     _responsedAnswer = error.toString();
-      //     chatConversation.add({'Ai': _responsedAnswer.trim()});
-      //     isLoading = false;
-      //   });
-      //   return error;
-      // });
     } catch (err) {
       {
         if (err.toString().contains('statusCode: 429')) {
@@ -266,6 +272,30 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         }
       }
     }
+  }
+
+  @override
+  void dispose() {
+    print('Da goi ham dispose');
+    print('ChatConversation:________ ${chatConversation.length}');
+    // print('widget.oldConversation:______ ${widget.oldConversation.length}');
+    // if (chatConversation.isNotEmpty &&
+    //     chatConversation.length != widget.oldConversation.length) {
+    try {
+      _chatController.dispose();
+      FirebaseFirestore.instance.collection('summarize').add({
+        'conversation': chatConversation,
+        "createdAt": Timestamp.now(),
+        'deletedAt': null,
+        'summarize': textSummarize,
+        'fileName': fileName,
+        'filePath': filePath,
+        'documentContent': fileContent
+      });
+    } catch (e) {
+      print(e.toString());
+    }
+    super.dispose();
   }
 
   @override
@@ -323,78 +353,183 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
             child: Text(fileName),
           )
         : const Align();
+    Widget summarizeTextWidget = textSummarize.isNotEmpty
+        ? Container(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+            margin: const EdgeInsets.only(
+              bottom: 8,
+              top: 8,
+            ),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Color.fromARGB(255, 228, 96, 200)),
+            child: SingleChildScrollView(
+              child: Text(
+                textSummarize,
+                style: const TextStyle(
+                  fontSize: 18,
+                ),
+              ),
+            ))
+        : const Text('');
     var listView = ListView.builder(
         controller: _scrollController,
-        itemCount: chatConversation.length,
+        itemCount: chatConversation.length + 1,
         itemBuilder: (ctx, index) {
-          final item = chatConversation[index];
-          final role = item.keys.first;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              role != 'Human'
-                  ? const Expanded(
-                      child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Icon(
-                            Icons.android_sharp,
-                          )),
-                    )
-                  : Expanded(
-                      flex: 7,
-                      child: Align(
-                          alignment: Alignment.topRight,
-                          child: Container(
-                            decoration: BoxDecoration(
-                                // border: Border.all()
-                                color: Colors.blue,
-                                borderRadius: BorderRadius.circular(20)),
-                            margin:
-                                const EdgeInsets.only(left: 100, bottom: 10),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
-                            child: Text(
-                              item.values.first,
-                              textAlign: TextAlign.start,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          )),
-                    ),
-              role != 'Human'
-                  ? Expanded(
-                      flex: 7,
-                      child: Align(
-                          alignment: Alignment.topLeft,
-                          child: Container(
-                            decoration: BoxDecoration(
-                                // border: Border.all()
-                                color: const Color.fromARGB(255, 73, 72, 72),
-                                borderRadius: BorderRadius.circular(20)),
-                            margin:
-                                const EdgeInsets.only(right: 100, bottom: 10),
-                            padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
-                            child: Row(children: [
-                              Expanded(
-                                child: Text(
-                                  item.values.first,
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(fontSize: 16),
-                                ),
+          if (index == 0) {
+            return summarizeTextWidget;
+          } else {
+            final item = chatConversation[index - 1];
+            final role = item.keys.first;
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                role != 'Human'
+                    ? const Expanded(
+                        child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Icon(
+                              Icons.android_sharp,
+                            )),
+                      )
+                    : Expanded(
+                        flex: 7,
+                        child: Align(
+                            alignment: Alignment.topRight,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  // border: Border.all()
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(20)),
+                              margin:
+                                  const EdgeInsets.only(left: 100, bottom: 10),
+                              padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
+                              child: Text(
+                                item.values.first,
+                                textAlign: TextAlign.start,
+                                style: const TextStyle(fontSize: 16),
                               ),
-                              IconButton(
-                                  key: ValueKey(index),
-                                  onPressed: () {
-                                    textToSpeech(item.values.first, 'vi-VN');
-                                  },
-                                  icon: const Icon(Icons.volume_up_rounded)),
-                            ]),
-                          )))
-                  : const Expanded(
-                      child: Align(
-                          alignment: Alignment.topRight,
-                          child: Icon(Icons.person_2_rounded))),
-            ],
-          );
+                            )),
+                      ),
+                role != 'Human'
+                    ? Expanded(
+                        flex: 7,
+                        child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  // border: Border.all()
+                                  color: const Color.fromARGB(255, 73, 72, 72),
+                                  borderRadius: BorderRadius.circular(20)),
+                              margin:
+                                  const EdgeInsets.only(right: 100, bottom: 10),
+                              padding: const EdgeInsets.fromLTRB(10, 12, 8, 12),
+                              child: Row(children: [
+                                Expanded(
+                                  child: Text(
+                                    item.values.first,
+                                    textAlign: TextAlign.start,
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ),
+                                IconButton(
+                                    key: ValueKey(index),
+                                    onPressed: () {
+                                      textToSpeech(item.values.first, 'vi-VN');
+                                    },
+                                    icon: const Icon(Icons.volume_up_rounded)),
+                              ]),
+                            )))
+                    : const Expanded(
+                        child: Align(
+                            alignment: Alignment.topRight,
+                            child: Icon(Icons.person_2_rounded))),
+              ],
+            );
+          }
         });
+    Widget inputChatForm = Form(
+      key: _formKey,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Expanded(
+            child: TextFormField(
+              focusNode: _focusNode,
+              controller: _chatController,
+              maxLength: 500,
+              decoration: const InputDecoration(
+                label: Text('Enter a message'),
+              ),
+              validator: (value) {
+                if (value == null ||
+                    value.isEmpty ||
+                    value.trim().length <= 1) {
+                  return 'A Short message!';
+                }
+                return null;
+              },
+              onSaved: (value) {
+                enteredQuestion = value!;
+              },
+              onTap: () {
+                try {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                } catch (e) {}
+                ;
+              },
+              onChanged: (value) {
+                try {
+                  _scrollController.animateTo(
+                    _scrollController.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                } catch (e) {}
+                ;
+                if (value != '') {
+                  setState(() {
+                    isText = true;
+                  });
+                } else {
+                  setState(() {
+                    isText = false;
+                  });
+                }
+              },
+            ),
+          ),
+          const SizedBox(
+            width: 10,
+          ),
+          isLoading
+              ? const CircularProgressIndicator()
+              : isText
+                  ? ElevatedButton(
+                      onPressed: () {
+                        renderQuestion();
+                        _focusNode.unfocus();
+                        // getRequestFunction();
+                        if (enteredQuestion.isNotEmpty) {
+                          getChatResponse();
+                        }
+                        // renderAnswer();
+                      },
+                      child: const Icon(Icons.input))
+                  : ElevatedButton(
+                      onPressed: _speechToText.isNotListening
+                          ? _startListening
+                          : _stopListening,
+                      child: Icon(_speechToText.isNotListening
+                          ? Icons.mic_off
+                          : Icons.mic)),
+        ],
+      ),
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('Summarize data'),
@@ -411,97 +546,21 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         children: [
           Align(
               alignment: Alignment.topCenter,
-              child: Column(children: [
-                fileSelect,
-                selectedFile,
-                selectedFileName,
-              ])),
-          // Text(textSummarize),
-          chatConversation.isNotEmpty
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                    children: [fileSelect, selectedFile, selectedFileName]),
+              )),
+          isLoadedSummarize
               ? Expanded(
                   child: listView,
                 )
               : Container(),
-          Form(
-            key: _formKey,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    focusNode: _focusNode,
-                    controller: _chatController,
-                    maxLength: 500,
-                    decoration: const InputDecoration(
-                      label: Text('Enter a message'),
-                    ),
-                    validator: (value) {
-                      if (value == null ||
-                          value.isEmpty ||
-                          value.trim().length <= 1) {
-                        return 'A Short message!';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) {
-                      _enteredQuestion = value!;
-                    },
-                    onTap: () {
-                      try {
-                        _scrollController.animateTo(
-                          _scrollController.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      } catch (e) {}
-                      ;
-                    },
-                    onChanged: (value) {
-                      try {
-                        _scrollController.animateTo(
-                          _scrollController.position.maxScrollExtent,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                        );
-                      } catch (e) {}
-                      ;
-                      if (value != '') {
-                        setState(() {
-                          isText = true;
-                        });
-                      } else {
-                        setState(() {
-                          isText = false;
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                isLoading
-                    ? const CircularProgressIndicator()
-                    : isText
-                        ? ElevatedButton(
-                            onPressed: () {
-                              renderQuestion();
-                              _focusNode.unfocus();
-                              // getRequestFunction();
-                              if (_enteredQuestion.isNotEmpty) {
-                                getChatResponse();
-                              }
-                              // renderAnswer();
-                            },
-                            child: const Icon(Icons.input))
-                        : ElevatedButton(
-                            onPressed: _speechToText.isNotListening
-                                ? _startListening
-                                : _stopListening,
-                            child: Icon(_speechToText.isNotListening
-                                ? Icons.mic_off
-                                : Icons.mic)),
-              ],
+          Opacity(
+            opacity: isLoadedSummarize ? 1 : 0.3,
+            child: IgnorePointer(
+              ignoring: !isLoadedSummarize,
+              child: inputChatForm,
             ),
           )
         ],

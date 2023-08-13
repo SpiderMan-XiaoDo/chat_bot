@@ -61,6 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       await _flutterTts.setLanguage(language);
       await _flutterTts.setPitch(1.0);
+
       await _flutterTts.speak(content);
     } catch (error) {
       print(error.toString());

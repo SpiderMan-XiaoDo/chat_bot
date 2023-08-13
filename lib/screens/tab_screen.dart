@@ -54,7 +54,10 @@ class _TabScreenState extends State<TabScreen> {
                       openAIKey: _initOpenAIKey,
                       oldConversation: widget.chatHistory,
                     )
-                  : SummarizeScreen(openAiKey: _initOpenAIKey);
+                  : SummarizeScreen(
+                      openAiKey: _initOpenAIKey,
+                      chatSummarizeConversation: [],
+                    );
     } else {
       activePage = currentIndex == 0
           ? _initOpenAIKey == ''
@@ -65,11 +68,14 @@ class _TabScreenState extends State<TabScreen> {
                   openAIKey: _initOpenAIKey,
                   oldConversation: widget.chatHistory,
                 )
-              : SummarizeScreen(openAiKey: _initOpenAIKey);
+              : SummarizeScreen(
+                  openAiKey: _initOpenAIKey,
+                  chatSummarizeConversation: [],
+                );
     }
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 160, 210, 255),
+        backgroundColor: const Color.fromARGB(255, 160, 210, 255),
         elevation: 0.0,
         title: Container(
           margin: EdgeInsets.zero,
@@ -106,8 +112,8 @@ class _TabScreenState extends State<TabScreen> {
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text('Invald input'),
-                  content: const Text(
-                      'Please make sure a valid tile, amount, date and category was entered!'),
+                  content:
+                      const Text('Please make sure a valid key was entered!'),
                   actions: [
                     TextButton(
                       onPressed: () {

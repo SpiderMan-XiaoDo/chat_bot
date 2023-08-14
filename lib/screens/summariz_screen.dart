@@ -229,7 +229,8 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               print('Cong doan tom tat 2');
               if (value['statusCode'] == 429) {
                 setState(() {
-                  textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+                  textSummarize =
+                      'Lỗi tóm tắt file, hãy thử lại  status code = 409';
                 });
               } else {
                 setState(() {
@@ -251,7 +252,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
           });
         }).catchError((err) {
           setState(() {
-            textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+            textSummarize = 'Lỗi tóm tắt file, hãy thử lại ${err.toString()}';
             isLoading = false;
             isLoadedSummarize = true;
           });
@@ -259,7 +260,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
       }
     } catch (e) {
       setState(() {
-        textSummarize = 'Lỗi tóm tắt file, hãy thử lại';
+        textSummarize = 'Lỗi tóm tắt file, hãy thử lại ${e.toString()}';
         isLoading = false;
         isLoadedSummarize = true;
       });

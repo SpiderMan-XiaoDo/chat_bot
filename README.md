@@ -75,10 +75,48 @@ Then, you could delete my Realtime Database url, and paste your Realtime Databas
 final url = Uri.https(
         'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app',
         'openai-key.json');
+```` 
+  2. Change this line  'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app' with your Realtime Database url.
+<img width="824" alt="image" src="https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/6315f323-42ef-408e-a743-e0ea2336333c">
+
+Change the 'Rules' in Firestore Database :
+<img width="935" alt="image" src="https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/c54a01ec-7e84-444a-8604-d5bcfe991663">
+
+Change this code:
+````bash
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
 ````
-    
-    
-  3. Change this line  'chat-bot-api-ffdeb-default-rtdb.asia-southeast1.firebasedatabase.app' with your url.
+To this code:
+````bash
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
+````
+Change the 'Rules' in RealTime DataBase:
+````bash
+{
+  "rules": {
+    ".read": "true",  // 2023-8-19
+    ".write": "true",  // 2023-8-19
+  }
+}
+````
+<img width="922" alt="image" src="https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/e516e133-c39a-46c4-ae74-586c88c4cc10">
+
+
 ## Acknowledgements
 
 chat_bot was built using the following open-source libraries and tools:

@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class MainDrawer extends StatelessWidget {
-  const MainDrawer({super.key});
+  const MainDrawer({super.key, required this.openAiKey});
+  final String openAiKey;
   @override
   Widget build(BuildContext context) {
     List<dynamic> listHistory = [];
@@ -83,7 +84,8 @@ class MainDrawer extends StatelessWidget {
                                 Navigator.of(context).pop();
                                 Navigator.of(context).pop();
                                 Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) => const TabScreen(
+                                    builder: (context) => TabScreen(
+                                          openAiKey: openAiKey,
                                           selectedIndex: 1,
                                           chatHistory: [],
                                           filePath: '',
@@ -107,6 +109,7 @@ class MainDrawer extends StatelessWidget {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => TabScreen(
+                                openAiKey: openAiKey,
                                 selectedIndex: 1,
                                 chatHistory: chatHistory,
                                 filePath: '',

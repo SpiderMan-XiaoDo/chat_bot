@@ -127,7 +127,8 @@ class ReturnedHomeScreen extends StatelessWidget {
                         _deleteOpenAIKey();
                         Navigator.of(context).pop();
                         Navigator.of(context).push(MaterialPageRoute(
-                            builder: (context) => const TabScreen(
+                            builder: (context) => TabScreen(
+                                  openAiKey: openAIKey,
                                   selectedIndex: 0,
                                   chatHistory: [],
                                   filePath: '',
@@ -143,7 +144,8 @@ class ReturnedHomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.of(context).pop();
                         Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => const TabScreen(
+                          builder: (context) => TabScreen(
+                              openAiKey: openAIKey,
                               selectedIndex: 1,
                               chatHistory: [],
                               filePath: '',

@@ -46,7 +46,8 @@ class _StateNewHomeScreen extends State<NewHomeScreen> {
               }));
           Navigator.of(context).pop();
           Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => const TabScreen(
+            builder: (context) => TabScreen(
+                openAiKey: enteredOpenAiKey,
                 selectedIndex: 1,
                 chatHistory: [],
                 filePath: '',

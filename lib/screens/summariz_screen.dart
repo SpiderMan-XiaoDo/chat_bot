@@ -271,7 +271,10 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
 
   void getChatResponse() async {
     try {
-      final res = await retrievalQA(enteredQuestion);
+      final res = await retrievalQA(
+          '''Với thông tin của file trên, hãy trả lời câu hỏi: $enteredQuestion
+      \nNếu thông tin đã hỏi không có trong file hãy thông báo thông tin đã hỏi không có trong file trên.
+      ''');
       if (res['statusCode'] == 429) {
         _responsedAnswer =
             'Bạn đã gửi quá nhiều yêu cầu(Tối Tối đa 3 yêu cầu/phút), hãy thử lại sau 20s.';
@@ -575,7 +578,8 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const TabScreen(
+                    builder: (context) => TabScreen(
+                          openAiKey: widget.openAiKey,
                           selectedIndex: 2,
                           chatHistory: [],
                           filePath: '',
@@ -586,7 +590,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
               child: const Text('New Summarize')),
         ],
       ),
-      drawer: const MainSummarizeDrawer(),
+      drawer: MainSummarizeDrawer(openAiKey: widget.openAiKey),
       body:
           //  Container(
           //   child: Column(

@@ -302,7 +302,8 @@ class _ChatScreenState extends State<ChatScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
                 Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => const TabScreen(
+                    builder: (context) => TabScreen(
+                          openAiKey: widget.openAIKey,
                           selectedIndex: 1,
                           chatHistory: [],
                           filePath: '',
@@ -313,7 +314,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: const Text('New Chat')),
         ],
       ),
-      drawer: MainDrawer(),
+      drawer: MainDrawer(openAiKey: widget.openAIKey),
       body:
           //  SingleChildScrollView(
           //   child:

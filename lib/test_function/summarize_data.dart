@@ -1,21 +1,26 @@
-// import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:whisper_dart/scheme/scheme.dart';
 
-// class SummarizeScreen extends StatefulWidget {
-//   const SummarizeScreen({super.key, required this.openAiKey});
-//   final String openAiKey;
-//   @override
-//   State<StatefulWidget> createState() {
-//     return _SummarizeScreenState();
-//   }
-// }
+import 'package:whisper_dart/whisper_dart.dart';
 
-// class _SummarizeScreenState extends State<SummarizeScreen> {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//         appBar: AppBar(
-//           title: const Text('Summarize data'),
-//         ),
-//         body: Container());
-//   }
-// }
+class AudioToText extends StatelessWidget {
+  const AudioToText();
+
+  void getTextFromAudio() async {
+    Whisper whisper = Whisper(whisperLib: 'galaxeus_ai.so');
+    Version whisperVersion = await whisper.getVersion().then((value) {
+      print(value);
+      return value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Center(
+      child: ElevatedButton(
+          onPressed: getTextFromAudio,
+          child: const Text('Click Here To See Magic!')),
+    ));
+  }
+}

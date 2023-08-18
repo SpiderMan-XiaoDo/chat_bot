@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 class TabScreen extends StatefulWidget {
   const TabScreen({
     super.key,
+    required this.openAiKey,
     required this.selectedIndex,
     required this.chatHistory,
     required this.summarizeChatHistory,
@@ -20,6 +21,7 @@ class TabScreen extends StatefulWidget {
   final List<dynamic> summarizeChatHistory;
   final String filePath;
   final String oldFileContent;
+  final String openAiKey;
   @override
   State<StatefulWidget> createState() {
     return _TabScreenState();
@@ -48,7 +50,12 @@ class _TabScreenState extends State<TabScreen> {
 
   @override
   void initState() {
-    _getOldOpenAIKey();
+    if (widget.openAiKey == '') {
+      _getOldOpenAIKey();
+    } else {
+      _initOpenAIKey = widget.openAiKey;
+    }
+
     super.initState();
   }
 

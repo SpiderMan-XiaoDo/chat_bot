@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class MainSummarizeDrawer extends StatelessWidget {
-  const MainSummarizeDrawer({super.key});
+  const MainSummarizeDrawer({super.key, required this.openAiKey});
+  final String openAiKey;
   @override
   Widget build(BuildContext context) {
     List<dynamic> listHistory = [];
@@ -92,7 +93,8 @@ class MainSummarizeDrawer extends StatelessWidget {
                                 Navigator.of(context).pop();
                                 Navigator.of(context).pop();
                                 Navigator.of(context).push(MaterialPageRoute(
-                                    builder: (context) => const TabScreen(
+                                    builder: (context) => TabScreen(
+                                          openAiKey: openAiKey,
                                           selectedIndex: 2,
                                           chatHistory: [],
                                           oldFileContent: '',
@@ -116,6 +118,7 @@ class MainSummarizeDrawer extends StatelessWidget {
                       Navigator.of(context).pop();
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => TabScreen(
+                                openAiKey: openAiKey,
                                 selectedIndex: 2,
                                 chatHistory: [],
                                 summarizeChatHistory: chatSummarizeHistory,

@@ -17,7 +17,7 @@ samples, guidance on mobile development, and a full API reference.
 
 ***************************************
   <div style="flex: 2;">
-    <p>Hypebard is an AI-powered writing assistant that makes writing easier and more enjoyable than ever before. Built using Flutter and written in Dart, it uses OpenAI's GPT technology to provide you with natural language processing capabilities that are second to none.</p>
+    <p>Chatbot, an innovative AI-driven chat application designed to revolutionize the way you engage in conversations. Crafted using cutting-edge Flutter technology and coded in Dart, Chatbot harnesses the power of OpenAI's advanced GPT technology, redefining natural language processing for a seamless and captivating experience.</p>
   </div>
 </div>
 

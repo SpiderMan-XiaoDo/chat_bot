@@ -1,20 +1,6 @@
 # chat_bot
 
 A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
 ***************************************
   <div style="flex: 2;">
     <p>Chatbot, an innovative AI-driven chat application designed to revolutionize the way you engage in conversations. Crafted using cutting-edge Flutter technology and coded in Dart, Chatbot harnesses the power of OpenAI's advanced GPT technology, redefining natural language processing for a seamless and captivating experience.</p>
@@ -26,6 +12,7 @@ samples, guidance on mobile development, and a full API reference.
 * Advanced AI-powered writing assistance
 * Beautiful and intuitive UI
 * Chat and Summarize conversation.
+* Convert audio to text
 
 ## Screenshots
 
@@ -38,12 +25,13 @@ samples, guidance on mobile development, and a full API reference.
 
 ## Installation
 
-You can download this repository from source using the
+You can clone this repository from source using the
 instructions below:
 
 ```bash
 git clone https://github.com/SpiderMan-XiaoDo/chat_bot.git
 cd chat_bot
+flutter pub get
 ````
 After download this repository, you mus config your firebase to save your data:
   Delete file [firebase_options.dart] in lib folder.
@@ -116,6 +104,11 @@ Change the 'Rules' in RealTime DataBase:
 ````
 <img width="922" alt="image" src="https://github.com/SpiderMan-XiaoDo/chat_bot/assets/90297125/e516e133-c39a-46c4-ae74-586c88c4cc10">
 
+## You can build APK file to install this app on your Phone.
+````bash
+flutter build apk
+````
+This APK file will be appear in the path ````build\app\outputs\apk\release```` in chat_bot
 
 ## Acknowledgements
 

@@ -1,5 +1,6 @@
 import 'dart:io';
-
+// ignore: library_prefixes
+import 'package:dart_openai/dart_openai.dart' as dartOpenAi;
 import 'package:chat_bot/screens/tab_screen.dart';
 import 'package:chat_bot/widgets/summarize_drawer.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:langchain_openai/langchain_openai.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mime/mime.dart';
 
 class SummarizeScreen extends StatefulWidget {
   const SummarizeScreen(
@@ -61,7 +63,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   late StuffDocumentsChain finalQAChain;
   late RetrievalQAChain retrievalQA;
   String fileContent = '';
-
+  final listAudioType = ['mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'wav', 'webm'];
   @override
   void initState() {
     try {
@@ -95,6 +97,7 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   void _initSpeech() async {
     // _speechEnabled =
     await _speechToText.initialize();
+    dartOpenAi.OpenAI.apiKey = widget.openAiKey;
     setState(() {});
   }
 
@@ -149,17 +152,37 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
         await FilePicker.platform.pickFiles(withData: true);
     if (result != null) {
       File file = File(result.files.single.path!);
-      setState(() {
+      PlatformFile fileAudio = result.files.first;
+      final typePath = lookupMimeType(fileAudio.path!);
+      filePath = file.path;
+      fileName = file.path.substring(file.path.lastIndexOf('/') + 1);
+      fileType = file.path.substring(file.path.lastIndexOf('.') + 1);
+      print('fileType: __________ $fileType');
+      if (fileType == 'txt') {
         file.readAsString().then((value) {
           fileContent = value;
           print('FileContent: $fileContent');
+          setState(() {
+            isSelected = true;
+          });
           return value;
         });
-        filePath = file.path;
-        fileName = file.path.substring(file.path.lastIndexOf('/') + 1);
-        fileType = file.path.substring(file.path.lastIndexOf('.') + 1);
-        isSelected = true;
-      });
+      }
+      print('fileType:_______ $typePath');
+      if (listAudioType.contains(fileType)) {
+        print('filePath: _____________ $filePath');
+        dartOpenAi.OpenAIAudioModel trans =
+            await dartOpenAi.OpenAI.instance.audio.createTranscription(
+          file: File(fileAudio.path!),
+          model: "whisper-1",
+          responseFormat: dartOpenAi.OpenAIAudioResponseFormat.json,
+        );
+        fileContent = trans.text;
+        print('fileContent: __________________ $fileContent');
+        setState(() {
+          isSelected = true;
+        });
+      }
     }
     try {} catch (e) {
       print(e.toString());
@@ -169,93 +192,81 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
   void loaderFile() async {
     try {
       if (filePath.isNotEmpty && isLoadedFile == false) {
-        var loader = TextLoader(filePath);
-        loader.load().then((value) {
-          print('Value Length:__________ ${value.length}');
-          const textSplitter = CharacterTextSplitter(
-            chunkSize: 100,
-            chunkOverlap: 0,
-          );
-          var fileToDoc = Document(pageContent: fileContent);
-          // final docChunks = textSplitter.splitDocuments(value);
-          final docChunks = textSplitter.splitDocuments([fileToDoc]);
-          textsWithSources = docChunks.map(
-            (e) {
-              return e.copyWith(
-                metadata: {
-                  ...e.metadata,
-                  'source': '${docChunks.indexOf(e)}-pl'
-                },
-              );
-            },
-          ).toList();
-          llm = ChatOpenAI(
-              apiKey: widget.openAiKey,
-              model: 'gpt-3.5-turbo-0613',
-              temperature: 0.5);
-          isLoadedFile = true;
-          embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
-          MemoryVectorStore.fromDocuments(
-                  documents: textsWithSources, embeddings: embeddings)
-              .then((value) {
-            print('docSearch:_________________ ${value.memoryVectors.first}');
-            docSearch = value;
-            qaChain = OpenAIQAWithSourcesChain(llm: llm);
-            final docPrompt = PromptTemplate.fromTemplate(
-              '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
+        const textSplitter = CharacterTextSplitter(
+          chunkSize: 100,
+          chunkOverlap: 0,
+        );
+        var fileToDoc = Document(pageContent: fileContent);
+        final docChunks = textSplitter.splitDocuments([fileToDoc]);
+        textsWithSources = docChunks.map(
+          (e) {
+            return e.copyWith(
+              metadata: {...e.metadata, 'source': '${docChunks.indexOf(e)}-pl'},
+            );
+          },
+        ).toList();
+        llm = ChatOpenAI(
+            apiKey: widget.openAiKey,
+            model: 'gpt-3.5-turbo-0613',
+            temperature: 0.5);
+        isLoadedFile = true;
+        embeddings = OpenAIEmbeddings(apiKey: widget.openAiKey);
+        MemoryVectorStore.fromDocuments(
+                documents: textsWithSources, embeddings: embeddings)
+            .then((value) {
+          print('docSearch:_________________ ${value.memoryVectors.first}');
+          docSearch = value;
+          qaChain = OpenAIQAWithSourcesChain(llm: llm);
+          final docPrompt = PromptTemplate.fromTemplate(
+            '''Hãy sử dụng nội dung của tôi đã cung cấp trong file text để trả lời các câu hỏi bằng tiếng Việt.\nLưu ý: Nếu không tìm thấy câu trả lời trong nội dung đã cung cấp, hãy thông báo "Thông tin không có trong tài liệu đã cung cung cấp ".
         Nếu câu hỏi là các câu tương tự như: 'Xin chào', 'Hello'... hãy phản hồi: 'Xin chào, hãy đặt các câu hỏi liên quan đến tài liệu đã cung cấp.'.
         .\ncontent: {page_content}\nSource: {source}
         ''',
-            );
-            // final
-            finalQAChain = StuffDocumentsChain(
-              llmChain: qaChain,
-              documentPrompt: docPrompt,
-            );
-            // final
-            retrievalQA = RetrievalQAChain(
-              retriever: docSearch.asRetriever(),
-              combineDocumentsChain: finalQAChain,
-            );
-            print('Cong doan tom tat');
-            retrievalQA(
-                    '''Hãy lựa chọn một số câu hỏi sau để tóm tắt văn bản :\n Ai là nhân vật chính.\n Sự kiện chính trong văn bản.
-            \n Người viết ra văn bản đó là ai.\nBối cảnh văn bản đề cập đến...để có thể tóm tắt nó.
-            Cố gắng trả lời nhiều câu hỏi nhất có có thể.
+          );
+          // final
+          finalQAChain = StuffDocumentsChain(
+            llmChain: qaChain,
+            documentPrompt: docPrompt,
+          );
+          // final
+          retrievalQA = RetrievalQAChain(
+            retriever: docSearch.asRetriever(),
+            combineDocumentsChain: finalQAChain,
+          );
+          print('Cong doan tom tat');
+          retrievalQA(
+                  '''Hãy cho biết nội dung file đề cập đến vấn đề gì?Hãy đưa ra một số câu hỏi gợi ý liên qua đến nội dung của file vừa cung cấp?
+                  Một số câu hỏi gợi ý:
+                  1:...
+                  2:...
+                  3:...
             ''')
-                // retrievalQA('''Ai là nhân vật chính trong nội dung trên?
-                // ''')
-                .then((value) {
-              print('Cong doan tom tat 2');
-              if (value['statusCode'] == 429) {
-                setState(() {
-                  textSummarize =
-                      'Lỗi tóm tắt file, hãy thử lại  status code = 409';
-                });
-              } else {
-                setState(() {
-                  print('value:________________ $value');
-                  textSummarize = value['result'].toString();
-                  isLoadedSummarize = true;
-                });
-              }
-            });
-            return value;
-          }).catchError((err) {
-            setState(() {
-              chatConversation.add({'Ai': _responsedAnswer.trim()});
-              isLoading = false;
-              isLoadedSummarize = true;
-            });
-            docSearch = MemoryVectorStore(embeddings: embeddings);
-            return MemoryVectorStore(embeddings: embeddings);
+              // retrievalQA('''Ai là nhân vật chính trong nội dung trên?
+              // ''')
+              .then((value) {
+            print('Cong doan tom tat 2');
+            if (value['statusCode'] == 429) {
+              setState(() {
+                textSummarize =
+                    'Lỗi tóm tắt file, hãy thử lại  status code = 409';
+              });
+            } else {
+              setState(() {
+                print('value:________________ $value');
+                textSummarize = value['result'].toString();
+                isLoadedSummarize = true;
+              });
+            }
           });
+          return value;
         }).catchError((err) {
           setState(() {
-            textSummarize = 'Lỗi tóm tắt file, hãy thử lại ${err.toString()}';
+            chatConversation.add({'Ai': _responsedAnswer.trim()});
             isLoading = false;
             isLoadedSummarize = true;
           });
+          docSearch = MemoryVectorStore(embeddings: embeddings);
+          return MemoryVectorStore(embeddings: embeddings);
         });
       }
     } catch (e) {
@@ -352,7 +363,6 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
     });
     if (isSelected == true) {
       loaderFile();
-      // loadFilePdf();
     }
     Widget fileSelect = !isSelected
         ? const Align(
@@ -387,7 +397,13 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
                         width: 46,
                         height: 46,
                       )
-                    : const Align();
+                    : listAudioType.contains(fileType)
+                        ? Image.network(
+                            'https://e7.pngegg.com/pngimages/559/252/png-clipart-audio-file-format-wav-sound-recording-and-reproduction-digital-media-others-computer-wallpaper-symmetry.png',
+                            width: 46,
+                            height: 46,
+                          )
+                        : const Align();
     Widget selectedFileName = isSelected
         ? Align(
             child: Text(fileName),

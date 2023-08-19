@@ -234,8 +234,8 @@ class _SummarizeScreenState extends State<SummarizeScreen> {
             combineDocumentsChain: finalQAChain,
           );
           print('Cong doan tom tat');
-          retrievalQA(
-                  '''Hãy cho biết nội dung file đề cập đến vấn đề gì?Hãy đưa ra một số câu hỏi gợi ý liên qua đến nội dung của file vừa cung cấp?
+          retrievalQA('''Hãy cho biết nội dung file đề cập đến vấn đề gì và
+                  đưa ra một số câu hỏi liên qua đến nội dung của file vừa cung cấp?
                   Một số câu hỏi gợi ý:
                   1:...
                   2:...
